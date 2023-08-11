@@ -10,6 +10,7 @@ def validate_config(config):
     logger = prefect.context.get("logger").info("rudaux_config.py valid for late registration autoextensions")
     return config
 
+# Same as class method get_due_date in Assignment
 def _get_due_date(assignment, student):
     basic_date = assignment['due_at']
 
