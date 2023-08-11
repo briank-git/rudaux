@@ -2,7 +2,7 @@ class Assignment:
 
     #TODO -- this has state now, so we need to make sure not overwritten by synchronize
     def __init__(self, canvas_dict):
-        self.__dict__.update(canvas_dict)
+        self.__dict__.update(canvas_dict) # Update __dict__ with canvas attributes.
         self.snapshot_taken = False
         self.override_snapshots_taken = []
         self.grader_workloads = {}
@@ -21,6 +21,7 @@ class Assignment:
                                            self.lock_at.in_timezone('America/Vancouver').format('ddd YYYY-MM-DD HH:mm:ss') if self.lock_at else 'N/A']
 
     #need this function to remove special characters (e.g. underscores) from jupyter user names on instructor server
+    # Iterates through name and only adds it to string if character is alphanumeric.
     def grader_basename(self):
         return ''.join(ch for ch in self.name if ch.isalnum())+'-grader-'
 
