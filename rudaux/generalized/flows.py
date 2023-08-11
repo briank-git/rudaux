@@ -19,6 +19,8 @@ def run(args):
     print("Creating/running flows in local threads")
     flows, config = _collect_flows(args)
     threads = []
+
+    # Put each flow in their own thread
     for flow in flows:
         threads.append(threading.Thread(target=flow[0], name=flow[1], args=(config,)))
 
@@ -29,6 +31,7 @@ def run(args):
         thread.join()
     return
 
+# Takes in parsed args. Returns selected flows and traitlets config.
 def _collect_flows(args):
     print("Loading the rudaux_config.py file...")
     if not os.path.exists(os.path.join(args.directory, 'rudaux_config.py')):
@@ -39,6 +42,8 @@ def _collect_flows(args):
               specify a directory with a valid rudaux_config.py file.
               """
             )
+
+    # Load config file with attributes
     config = Config()
     config.merge(PyFileConfigLoader('rudaux_config.py', path=args.directory).load_config())
 
@@ -51,6 +56,8 @@ def _collect_flows(args):
     ntfy.validate_config(config)
 
     flows = []
+
+    # Add selected flows to flows array, add all if all_flows=True
     if args.snap or args.all_flows:
         flows.append((snapshot_flow, 'snapshot'))
     if args.autoext or args.all_flows:
@@ -60,6 +67,7 @@ def _collect_flows(args):
 
     return flows, config
 
+# Takes traitlets config. Defines and returns a fail handler that sends an email with notification class when flow fails.
 def fail_handler_gen(config):
     def fail_handler(flow, state, ref_task_states):
         if state.is_failed():
@@ -67,6 +75,7 @@ def fail_handler_gen(config):
             sm.notify(config.instructor_user, f"Hi Instructor, \r\n Flow failed!\r\n Message:\r\n{state.message}")
     return fail_handler
 
+# Takes traitlets config. Takes a zfs snapshot of student assignments.
 def snapshot_flow(config):
     interval = config.snapshot_interval
     while True:
@@ -94,6 +103,7 @@ def snapshot_flow(config):
         time.sleep(interval*60)
     # end func
 
+# Takes traitlets config. Automatically extend due dates for assignments.
 def autoext_flow(config):
     interval = config.autoext_interval
     while True:
@@ -124,24 +134,26 @@ def autoext_flow(config):
 # right strategy.
 def grading_flow(config):
     try:
+        # Elevates privileges by trying to run 'sudo -n true', throws error if a password is needed.
         check_output(['sudo', '-n', 'true'])
     except CalledProcessError as e:
         assert False, f"You must have sudo permissions to run the flow. Command: {e.cmd}. returncode: {e.returncode}. output {e.output}. stdout {e.stdout}. stderr {e.stderr}"
-    hour = config.grade_hour
+    hour = config.grade_hour # Does not exist in config template
     minute = config.grade_minute
     while True:
         # wait for next grading run
         t = plm.now().in_tz(config.grading_timezone)
         print(f"Time now: {t}")
         tgrd = plm.now().at(hour = hour, minute = minute)
+        # If current time is past grading time, add a day to grading time.
         if t > tgrd:
             tgrd = tgrd.add(days=1)
         print(f"Next grading flow run: {tgrd}")
         print(f"Grading waiting {(tgrd-t).total_hours()} hours for run...")
-        time.sleep((tgrd-t).total_seconds())
+        time.sleep((tgrd-t).total_seconds()) # Sleep until current time = grading time.
 
         # start grading run
-        for group in config.course_groups:
+        for group in config.course_groups: # iterate through dict of course groups
             # get the course names in this group
             course_names = config.course_groups[group]
             # create connections to APIs

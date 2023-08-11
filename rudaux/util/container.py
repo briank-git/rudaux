@@ -1,10 +1,16 @@
 import docker
 import time
+# Convenience function to setup logging output. It will return a named logger, 
+# which can be used inside programs. The function has the ability to setup logging 
+# both to a terminal, to a log file, including setting up log rotation and for sending 
+# out email on log message at warning level or above.
 from .utilities import get_logger
+# These Exceptions, when raised, are used to signal state changes when tasks or flows are running. 
+# Signals are used in TaskRunners and FlowRunners as a way of communicating the changes in states.
 from prefect.engine import signals
 
 def run_container(config, command, homedir = None):
-    client = docker.from_env()
+    client = docker.from_env() # Instantiates a client to talk to docker daemon
     logger = get_logger()
     ctr = None
     result = {}
@@ -14,12 +20,14 @@ def run_container(config, command, homedir = None):
         n_tries -= 1
         try:
             #start the container
-            ctr = client.containers.run(config.docker_image, command,
-                                                detach = True,
-                                                remove = False,
-                                                stderr = True,
-                                                stdout = True,
+            ctr = client.containers.run(config.docker_image, 
+                                                command, # Command to run on the container
+                                                detach = True, # Run container in the background and return a Container object.
+                                                remove = False, # Remove a container when it has finished running
+                                                stderr = True, # Return logs from stderr
+                                                stdout = True, # Return logs from stdout
                                                 mem_limit = config.docker_memory,
+                                                # A dictionary to configure volumes mounted inside the container. 
                                                 volumes = {homedir : {'bind': config.docker_bind_folder, 'mode': 'rw'}} if homedir else {}
                                              )
         except docker.errors.APIError as e:
@@ -51,7 +59,7 @@ def run_container(config, command, homedir = None):
     if ctr:
         while ctr.status in ['running', 'created']:
             time.sleep(0.25)
-            ctr.reload()
+            ctr.reload() # Update container attributes with new data
         result['exit_status'] = ctr.status
         result['log'] = ctr.logs(stdout = True, stderr = True).decode('utf-8')
         ctr.remove()
