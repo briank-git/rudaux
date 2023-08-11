@@ -9,6 +9,7 @@ from .utilities import get_logger
 # Signals are used in TaskRunners and FlowRunners as a way of communicating the changes in states.
 from prefect.engine import signals
 
+# Creates and runs a docker container with input command and homedir as volume.
 def run_container(config, command, homedir = None):
     client = docker.from_env() # Instantiates a client to talk to docker daemon
     logger = get_logger()
