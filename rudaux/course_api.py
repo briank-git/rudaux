@@ -1,4 +1,7 @@
 import requests
+# This module defines a standard interface to break Uniform Resource Locator (URL) 
+# strings up in components (addressing scheme, network location, path etc.), to 
+# combine the components back into a URL string, and to convert a “relative URL” to an absolute URL given a “base URL.”
 import urllib.parse
 import pendulum as plm
 import prefect
