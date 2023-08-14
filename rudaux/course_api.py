@@ -1,3 +1,6 @@
+# Defines functions which are used to communicate with the Canvas API. Receives and sends JSON objects.
+# Gets, puts, deletes, posts, information for assignments, registration, TAs, instructors, submissions, overrides.
+
 import requests
 # This module defines a standard interface to break Uniform Resource Locator (URL) 
 # strings up in components (addressing scheme, network location, path etc.), to 

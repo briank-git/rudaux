@@ -22,6 +22,7 @@ class Assignment:
 
     #need this function to remove special characters (e.g. underscores) from jupyter user names on instructor server
     # Iterates through name and only adds it to string if character is alphanumeric.
+    ## Returns date it is due at and the latest override if it exists.
     def grader_basename(self):
         return ''.join(ch for ch in self.name if ch.isalnum())+'-grader-'
 
