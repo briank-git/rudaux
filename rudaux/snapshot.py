@@ -51,7 +51,6 @@ def _ssh_command(client, cmd):
     stdin, stdout, stderr = client.exec_command(cmd)
 
     # get output
-    logger.info('Getting output')
     stdout_lines = []
     for line in stdout:
         stdout_lines.append(line)
@@ -60,7 +59,6 @@ def _ssh_command(client, cmd):
     for line in stderr:
         stderr_lines.append(line)
 
-    logger.info('Blocking on exit status')
     # block on result
     out_status = stdout.channel.recv_exit_status()
     err_status = stderr.channel.recv_exit_status()
