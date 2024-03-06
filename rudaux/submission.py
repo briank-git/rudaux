@@ -440,7 +440,8 @@ def return_solutions(config, pastdue_frac, subm_set):
                     if not os.path.exists(subm['student_folder']):
                         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
                     else:
-                        logger.warning(f"Solution secure copy failed with exit code {exitcode}")
+                        sig=signals.FAIL(f"Solution secure copy failed with exit code {exitcode}")
+                        raise sig
                 else:
                     logger.info(f"Solution copied")
                 
