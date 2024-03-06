@@ -432,7 +432,7 @@ def return_solutions(config, pastdue_frac, subm_set):
                 remotefile=os.path.join(config.user_root, student['id'], soln_name)
                 scp_user=config.jupyterhub_user
                 remotehost=config.student_ssh[subm_set[course_name]['course_info']['id']]['hostname']
-                logger.info(f"Copying {soln_name} to {remotefile} on {remotehost}")
+                logger.info(f"Copying solution to {remotefile} on {remotehost}")
 
                 status=os.system('scp "%s" "%s:%s" &> /dev/null' % (localfile, scp_user+"@"+remotehost, remotefile) )
                 exitcode=os.waitstatus_to_exitcode(status)
