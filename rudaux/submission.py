@@ -434,7 +434,7 @@ def return_solutions(config, pastdue_frac, subm_set):
                 remotehost=config.student_ssh[subm_set[course_name]['course_info']['id']]['hostname']
                 logger.info(f"Copying {soln_name} to {remotefile} on {remotehost}")
 
-                status=os.system('scp -p "%s" "%s:%s" &> /dev/null' % (localfile, scp_user+"@"+remotehost, remotefile) )
+                status=os.system('scp "%s" "%s:%s" &> /dev/null' % (localfile, scp_user+"@"+remotehost, remotefile) )
                 exitcode=os.waitstatus_to_exitcode(status)
                 if exitcode != 0:
                     if not os.path.exists(subm['student_folder']):
