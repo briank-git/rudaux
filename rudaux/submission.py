@@ -234,26 +234,27 @@ def build_submission_set(config, subm_set):
             subm['soln_path'] = os.path.join(subm['student_folder'], assignment['name'] + '_solution.html')
             subm['fdbk_path'] = os.path.join(subm['student_folder'], assignment['name'] + '_feedback.html')
 
+    ### Commented out, NFS too slow and redundant (build_grading_team will skip if all grades posted)
     # check whether all grades have been posted, and solutions/feedback returned (assignment is done). If so, skip
-    all_posted = True
-    all_returned = True
-    for course_name in subm_set:
-        if course_name == '__name__':
-            continue
-        #check that all grades are posted
-        for subm in subm_set[course_name]['submissions']:
-            if 'posted_at' not in subm:
-                logger.info("No posted_at for: " + str(subm) + '\n')
-        all_posted = all_posted and all([subm['posted_at'] is not None for subm in subm_set[course_name]['submissions']])
-        for subm in subm_set[course_name]['submissions']:
-            # only check feedback/soln if student folder exists, i.e., they've logged into JHub
-            if os.path.exists(subm['student_folder']):
-                # check that soln was returned
-                all_returned = all_returned and os.path.exists(subm['soln_path'])
-                # check that fdbk was returned or assignment missing + score 0
-                all_returned = all_returned and (os.path.exists(subm['fdbk_path']) or (subm['score'] == 0 and not os.path.exists(subm['snapped_assignment_path'])))
-    if all_posted and all_returned:
-        raise signals.SKIP(f"All grades are posted, all solutions returned, and all feedback returned for assignment {subm_set['__name__']}. Workflow done. Skipping.")
+    # all_posted = True
+    # all_returned = True
+    # for course_name in subm_set:
+    #     if course_name == '__name__':
+    #         continue
+    #     #check that all grades are posted
+    #     for subm in subm_set[course_name]['submissions']:
+    #         if 'posted_at' not in subm:
+    #             logger.info("No posted_at for: " + str(subm) + '\n')
+    #     all_posted = all_posted and all([subm['posted_at'] is not None for subm in subm_set[course_name]['submissions']])
+    #     for subm in subm_set[course_name]['submissions']:
+    #         # only check feedback/soln if student folder exists, i.e., they've logged into JHub
+    #         if os.path.exists(subm['student_folder']):
+    #             # check that soln was returned
+    #             all_returned = all_returned and os.path.exists(subm['soln_path'])
+    #             # check that fdbk was returned or assignment missing + score 0
+    #             all_returned = all_returned and (os.path.exists(subm['fdbk_path']) or (subm['score'] == 0 and not os.path.exists(subm['snapped_assignment_path'])))
+    # if all_posted and all_returned:
+    #     raise signals.SKIP(f"All grades are posted, all solutions returned, and all feedback returned for assignment {subm_set['__name__']}. Workflow done. Skipping.")
 
     logger.info(f"Done building submission set for assignment {subm_set['__name__']}")
 
@@ -426,13 +427,30 @@ def return_solutions(config, pastdue_frac, subm_set):
             student = subm['student']
             #logger.info(f"Checking whether solution for submission {subm['name']} can be returned")
             if subm['due_at'] < plm.now():
-                if not os.path.exists(subm['soln_path']):
-                    logger.info(f"Returning solution submission {subm['name']}")
-                    if os.path.exists(subm['student_folder']):
-                        shutil.copy(subm['grader']['soln_path'], subm['soln_path'])
-                        recursive_chown(subm['soln_path'], subm['grader']['unix_user'], subm['grader']['unix_group'])
-                    else:
+                soln_name=os.path.basename(os.path.normpath(subm['grader']['soln_path']))
+                localfile=subm['grader']['soln_path']
+                remotefile=os.path.join(config.user_root, student['id'], soln_name)
+                scp_user=config.jupyterhub_user
+                remotehost=config.student_ssh[subm_set[course_name]['course_info']['id']]['hostname']
+                logger.info(f"Copying {soln_name} to {remotefile} on {remotehost}")
+
+                status=os.system('scp -p "%s" "%s:%s" &> /dev/null' % (localfile, scp_user+"@"+remotehost, remotefile) )
+                exitcode=os.waitstatus_to_exitcode(status)
+                if exitcode != 0:
+                    if not os.path.exists(subm['student_folder']):
                         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
+                    else:
+                        logger.warning(f"Solution secure copy failed with exit code {exitcode}")
+                else:
+                    logger.info(f"Solution copied")
+                
+                # if not os.path.exists(subm['soln_path']):
+                #     logger.info(f"Returning solution submission {subm['name']}")
+                #     if os.path.exists(subm['student_folder']):
+                #         shutil.copy(subm['grader']['soln_path'], subm['soln_path'])
+                #         recursive_chown(subm['soln_path'], subm['grader']['unix_user'], subm['grader']['unix_group'])
+                #     else:
+                #         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
             #else:
             #    logger.info(f"Not returnable yet; the student-specific due date ({subm['due_at']}) has not passed.")
     return
