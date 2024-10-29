@@ -134,7 +134,7 @@ for lf in logfiles:
     df_tmp = df_tmp[["year", "month", "day", "hour", "minute", "second", "service", "msg_type", "origin", "request_no", "request_type", "directory", "user_IP"]]
 
     # output to file
-    df_tmp.to_csv(f"processed/jh_messages_{itr:03}.csv", index=False)
+    df_tmp.to_csv(f"processed/messages_{itr:03}.csv", index=False)
     itr += 1
 # end for
 print('Done!')
