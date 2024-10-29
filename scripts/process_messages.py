@@ -6,14 +6,91 @@ import humanfriendly as hf
 import io
 import re
 
+############################
+############################
+#  JH MESSAGES PROCESSOR   #
+############################
+############################
+def jh_token_processing(tokens):
+    """
+    Process a jupyterhub vector of string tokens
+    """
+    length = len(tokens)
+
+    if length < 15:
+        tokens_ = ["" for  i in range(15)]
+        tokens_[:5] = [tokens[i] for i in range(5)]
+        tokens_[5:] = ["NA" for i in range(10)]
+        tokens_[4]  = tokens[4][:-1] # rm : after jupyterhub[xxxx]
+        tokens_[13] = "@NA"
+        # tokens with length == 5 are empty, but if length > 5 then we retrieve the message and save it
+        if length > 5: tokens_[12] = " ".join(tokens[5:])
+        return tokens_
+    # end if
+
+    tokens_ = tokens.copy()
+    tokens_[4] = tokens[4][:-1] # rm : after jupyterhub[xxxx]
+
+    if length == 15:
+        tokens_[5] = tokens[5][1:]     # rm [ before I,W, or E
+        tokens_[9] = tokens[9][:-1]    # rm ] after message
+        tokens_[13] = tokens[13][1:-1] # rm ( before and ) after line
+        tokens_[14] = tokens[14][:-2]  # rm 'ms' after number
+        return tokens_
+    # end if
+
+    if length == 17:
+        tokens_[5] = tokens[5][1:]                # rm [ before I,W, or E
+        tokens_[9] = tokens[9][:-1]               # rm ] after message
+        if tokens[13] == "->": # these contain IP address, user, and time - we save those
+            tokens_[12] = " ".join(tokens[12:15]) # join directories
+            tokens_[15] = tokens[15][1:-1]        # rm ( before and ) after line
+            tokens_[16] = tokens[16][:-2]         # rm 'ms' after number
+            tokens_ = tokens_[:13]+tokens_[15:17] # rm directories that were joined
+        else: # these only contain a message, which we retrieve but leave the rest as NA
+            tokens_[10] = "NA"                    # HTTP code 1
+            tokens_[11] = "NA"                    # HTTP code 2
+            tokens_[12] = " ".join(tokens[10:])   # join directories
+            tokens_[13] = "@NA"                   # user and IP (@ necessary for post-processing)
+            tokens_[14] = "NA"                    # add missing time
+            tokens_ = tokens_[:15]
+        # end if
+        return tokens_
+    # end if
+
+    if length != 15 or length != 18:
+        tokens_[5] = tokens[5][1:]          # rm [ before I,W, or E
+        tokens_[9] = tokens[9][:-1]         # rm ] after message
+        tokens_[10] = "NA"                  # HTTP code 1
+        tokens_[11] = "NA"                  # HTTP code 2
+        tokens_[12] = " ".join(tokens[10:]) # join directories
+        tokens_[13] = "@NA"                 # user and IP (@ necessary for post-processing)
+        tokens_[14] = "NA"                  # add missing time
+        tokens_ = tokens_[:15]              # keep relevant bits only
+        return tokens_
+    # end if
+
+    return tokens_
+########################################
+########################################
+########################################
+########################################
+
+
+############################
+############################
+#   PROCESS JH MESSAGES    #
+############################
+############################
 logfiles = sorted(os.listdir("messages"))
 itr = 0
 for lf in logfiles:
+    if lf[:8] != 'messages': continue # ignore DS store and similar non-messages files
     fn = os.path.join("messages", lf)
 
     print(f"Filling messages_{itr:03}.csv -- Processing {fn}")
     # read with whitespace delim; standardize columns / whitespace with "
-    with open(fn, "r") as f:
+    with open(fn, "r", encoding='utf-8', errors='ignore') as f:
         fo = io.StringIO()
         data = f.readlines()
 
@@ -23,20 +100,13 @@ for lf in logfiles:
             tokens = line.replace('"', '').split()
 
             # filter lines to keep only messages with info
-            tokens[4] = tokens[4][:-1] # rm : after jupyterhub
-            if tokens[4] != 'jupyterhub': continue
-            if tokens[5][0] != '[': continue # ignore messages that don't have [xxx] structure
-            if len(tokens) != 15: continue # only desired messages; this ignores "Checking routes" and "removed from proxy" messages
-            if tokens[9] != 'log:174]': continue # messages with activity data from students
+            if "jupyterhub" not in tokens[4]: continue
 
-            # clean up the lines
-            tokens[5] = tokens[5][1:]  # rm [ before I,W, or E
-            tokens[9] = tokens[9][:-1] # rm ] after message
-            tokens[13] = tokens[13][1:-1] # rm ( before and ) after line
-            tokens[14] = tokens[14][:-2] # rm 'ms' after number
+            # process tokens
+            tokens = jh_token_processing(tokens = tokens)
 
-            # join but separate user number from ip address in tokens[13]
-            data2.append(" ".join(tokens) + '\n' )
+            # join
+            data2.append( " ".join(tokens[:12]) + ' "' + "".join(tokens[12]) + '" ' + " ".join(tokens[13:]) +'\n' )
         # end for
 
         if len(data2) == 0:
@@ -49,7 +119,7 @@ for lf in logfiles:
     # end with
 
     # read the table and rename the columns
-    df_tmp = pd.read_table(fo, sep='\s+', header=None)
+    df_tmp = pd.read_table(fo, delim_whitespace=True, header=None)
 
     df_tmp.columns = ["month", "day", "timestamp", "host", "service", "msg_type", "date", "timestamp2", "service2", "origin", "request_no", "request_type", "directory", "user_IP", "time"]
 
