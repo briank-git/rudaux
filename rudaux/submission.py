@@ -13,6 +13,7 @@ from prefect.engine import signals
 from .snapshot import _get_snap_name
 from .utilities import get_logger, recursive_chown
 from bs4 import BeautifulSoup
+from .ssh import ssh_open, copy_remote, file_exists_remote
 
 class GradingStatus(IntEnum):
     ASSIGNED = 0
@@ -215,11 +216,12 @@ def build_submission_set(config, subm_set):
                 raise sig
 
             # compute the submissions's due date, snap name, paths
+            course_id = subm_set[course_name]['course_info']['id']
             due_date, override = _get_due_date(assignment, student)
             subm['due_at'] = due_date
             subm['override'] = override
             subm['snap_name'] = _get_snap_name(course_name, assignment, override)
-            subm['student_folder'] = os.path.join(config.student_dataset_root, student['id'])
+            subm['student_folder'] = os.path.join(config.student_ssh[course_id]['student_root'], student['id'])
 
             if override is None:
                 subm['zfs_snap_path'] = config.student_dataset_root.strip('/') + '@' + subm['snap_name']
@@ -234,28 +236,28 @@ def build_submission_set(config, subm_set):
             subm['soln_path'] = os.path.join(subm['student_folder'], assignment['name'] + '_solution.html')
             subm['fdbk_path'] = os.path.join(subm['student_folder'], assignment['name'] + '_feedback.html')
 
-    ### Commented out, NFS too slow and redundant (build_grading_team will skip if all grades posted)
     # check whether all grades have been posted, and solutions/feedback returned (assignment is done). If so, skip
-    # all_posted = True
-    # all_returned = True
-    # for course_name in subm_set:
-    #     if course_name == '__name__':
-    #         continue
-    #     #check that all grades are posted
-    #     for subm in subm_set[course_name]['submissions']:
-    #         if 'posted_at' not in subm:
-    #             logger.info("No posted_at for: " + str(subm) + '\n')
-    #     all_posted = all_posted and all([subm['posted_at'] is not None for subm in subm_set[course_name]['submissions']])
-    #     for subm in subm_set[course_name]['submissions']:
-    #         # only check feedback/soln if student folder exists, i.e., they've logged into JHub
-    #         if os.path.exists(subm['student_folder']):
-    #             # check that soln was returned
-    #             all_returned = all_returned and os.path.exists(subm['soln_path'])
-    #             # check that fdbk was returned or assignment missing + score 0
-    #             all_returned = all_returned and (os.path.exists(subm['fdbk_path']) or (subm['score'] == 0 and not os.path.exists(subm['snapped_assignment_path'])))
-    # if all_posted and all_returned:
-    #     raise signals.SKIP(f"All grades are posted, all solutions returned, and all feedback returned for assignment {subm_set['__name__']}. Workflow done. Skipping.")
-
+    all_posted = True
+    all_returned = True
+    client = ssh_open(config, course_id)
+    for course_name in subm_set:
+        if course_name == '__name__':
+            continue
+        #check that all grades are posted
+        for subm in subm_set[course_name]['submissions']:
+            if 'posted_at' not in subm:
+                logger.info("No posted_at for: " + str(subm) + '\n')
+        all_posted = all_posted and all([subm['posted_at'] is not None for subm in subm_set[course_name]['submissions']])
+        for subm in subm_set[course_name]['submissions']:
+            # only check feedback/soln if student folder exists, i.e., they've logged into JHub
+            if file_exists_remote(client, subm['student_folder']):
+                # check that soln was returned
+                all_returned = all_returned and file_exists_remote(client, subm['soln_path'])
+                # check that fdbk was returned or assignment missing + score 0
+                all_returned = all_returned and (file_exists_remote(client, subm['fdbk_path']) or (subm['score'] == 0 and not file_exists_remote(client, subm['snapped_assignment_path'])))
+    client.close()
+    if all_posted and all_returned:
+        raise signals.SKIP(f"All grades are posted, all solutions returned, and all feedback returned for assignment {subm_set['__name__']}. Workflow done. Skipping.")
     logger.info(f"Done building submission set for assignment {subm_set['__name__']}")
 
     return subm_set
@@ -423,37 +425,31 @@ def return_solutions(config, pastdue_frac, subm_set):
     for course_name in subm_set:
         if course_name == '__name__':
             continue
+        course_id = subm_set[course_name]['course_info']['id']
+        client = ssh_open(config, course_id)
         for subm in subm_set[course_name]['submissions']:
             student = subm['student']
-            #logger.info(f"Checking whether solution for submission {subm['name']} can be returned")
+            logger.info(f"Checking whether solution for submission {subm['name']} can be returned")
             if subm['due_at'] < plm.now():
-                soln_name=os.path.basename(os.path.normpath(subm['grader']['soln_path']))
+                remotefile=subm['soln_path']
                 localfile=subm['grader']['soln_path']
-                remotefile=os.path.join(config.user_root, student['id'], soln_name)
-                scp_user=config.jupyterhub_user
-                remotehost=config.student_ssh[subm_set[course_name]['course_info']['id']]['hostname']
-                logger.info(f"Copying solution to {remotefile}")
 
-                status=os.system('scp "%s" "%s:%s" &> /dev/null' % (localfile, scp_user+"@"+remotehost, remotefile) )
-                exitcode=os.waitstatus_to_exitcode(status)
-                if exitcode != 0:
-                    if not os.path.exists(subm['student_folder']):
+                if file_exists_remote(client, remotefile):
+                    continue
+
+                logger.info(f"Copying solution to {remotefile}")
+                
+                if not copy_remote(client,localfile,remotefile):
+                    if not file_exists_remote(client, subm['student_folder']):
                         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
                     else:
-                        sig=signals.FAIL(f"Solution secure copy failed with exit code {exitcode}")
+                        sig=signals.FAIL("Solution copy failed")
                         raise sig
                 else:
-                    logger.info(f"Solution copied")
-                
-                # if not os.path.exists(subm['soln_path']):
-                #     logger.info(f"Returning solution submission {subm['name']}")
-                #     if os.path.exists(subm['student_folder']):
-                #         shutil.copy(subm['grader']['soln_path'], subm['soln_path'])
-                #         recursive_chown(subm['soln_path'], subm['grader']['unix_user'], subm['grader']['unix_group'])
-                #     else:
-                #         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
-            #else:
-            #    logger.info(f"Not returnable yet; the student-specific due date ({subm['due_at']}) has not passed.")
+                    logger.info("Solution copied")
+            # else:
+            #     logger.info(f"Not returnable yet; the student-specific due date ({subm['due_at']}) has not passed.")
+        client.close()
     return
 
 def generate_collect_subms_name(config, subm_set, **kwargs):
@@ -466,7 +462,9 @@ def collect_submissions(config, subm_set):
         if course_name == '__name__':
             continue
         course_info = subm_set[course_name]['course_info']
+        course_id = course_info['id']
         assignment = subm_set[course_name]['assignment']
+        client = ssh_open(config, course_id)
         for subm in subm_set[course_name]['submissions']:
             student = subm['student']
 
@@ -476,7 +474,7 @@ def collect_submissions(config, subm_set):
                  continue
 
             if not os.path.exists(subm['collected_assignment_path']):
-                if not os.path.exists(subm['snapped_assignment_path']):
+                if not file_exists_remote(client, subm['snapped_assignment_path']):
                     subm['status'] = GradingStatus.MISSING
                     if subm['score'] is None:
                         logger.info(f"Submission {subm['name']} is missing. Uploading score of 0.")
@@ -485,11 +483,20 @@ def collect_submissions(config, subm_set):
                 else:
                     logger.info(f"Submission {subm['name']} not yet collected. Collecting...")
                     os.makedirs(os.path.dirname(subm['collected_assignment_path']), exist_ok=True)
-                    shutil.copy(subm['snapped_assignment_path'], subm['collected_assignment_path'])
-                    recursive_chown(subm['collected_assignment_folder'], subm['grader']['unix_user'], subm['grader']['unix_group'])
+                    
+                    localfile=subm['collected_assignment_path']
+                    remotefile=subm['snapped_assignment_path']
+                    
+                    if not copy_remote(client, localfile, remotefile, fromremote=True):
+                        sig=signals.FAIL(f"Failed to collect submission {subm['name']} with exit code {exitcode}")
+                        raise sig
+                    else:
+                        logger.info(f"Submission collected")
+
                     subm['status'] = GradingStatus.COLLECTED
             else:
                 subm['status'] = GradingStatus.COLLECTED
+        client.close()
     return subm_set
 
 
@@ -871,6 +878,8 @@ def return_feedback(config, pastdue_frac, subm_set):
     for course_name in subm_set:
         if course_name == '__name__':
             continue
+        course_id = subm_set[course_name]['course_info']['id']
+        client = ssh_open(config, course_id)
         for subm in subm_set[course_name]['submissions']:
             student = subm['student']
             #logger.info(f"Checking whether feedback for submission {subm['name']} can be returned")
@@ -878,15 +887,15 @@ def return_feedback(config, pastdue_frac, subm_set):
                 if not os.path.exists(subm['generated_feedback_path']):
                     logger.warning(f"Warning: feedback file {subm['generated_feedback_path']} doesnt exist yet. Skipping feedback return.")
                     continue
-                if not os.path.exists(subm['fdbk_path']):
+                if not file_exists_remote(client, subm['fdbk_path']):
                     logger.info(f"Returning feedback for submission {subm['name']}")
-                    if os.path.exists(subm['student_folder']):
-                        shutil.copy(subm['generated_feedback_path'], subm['fdbk_path'])
-                        recursive_chown(subm['fdbk_path'], subm['grader']['unix_user'], subm['grader']['unix_group'])
+                    if file_exists_remote(subm['student_folder']):
+                        copy_remote(client, subm['generated_feedback_path'], subm['fdbk_path'])
                     else:
                         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping feedback return.")
             #else:
             #    logger.info(f"Not returnable yet; the student-specific due date ({subm['due_at']}) has not passed.")
+        client.close()
     return
 
 
