@@ -435,6 +435,7 @@ def return_solutions(config, pastdue_frac, subm_set):
                 localfile=subm['grader']['soln_path']
 
                 if file_exists_remote(client, remotefile):
+                    logger.info(f"Solution already returned.")
                     continue
 
                 logger.info(f"Copying solution to {remotefile}")
