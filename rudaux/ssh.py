@@ -11,7 +11,8 @@ def ssh_open(config, course_id):
     client = pmk.client.SSHClient()
     client.set_missing_host_key_policy(pmk.client.AutoAddPolicy())
     client.load_system_host_keys()
-    client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['user'], allow_agent=True)
+    # client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['user'], allow_agent=True)
+    client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['file_user'], allow_agent=True)
     s = client.get_transport().open_session()
     pmk.agent.AgentRequestHandler(s)
     return client
@@ -38,8 +39,22 @@ def copy_remote(client, localfile, remotefile, fromremote=False):
 # TAKES: Paramiko client, remote file path
 # RETURNS: True if exists, False otherwise
 def file_exists_remote(client, remotefile):
-    cmd = 'test -f' + remotefile
+    cmd = 'test -f ' + remotefile
     # execute the snapshot command
     stdin, stdout, stderr = client.exec_command(cmd)
 
-    return True if stdout.channel.recv_exit_status() == 0 else False
+    exitstatus = stdout.channel.recv_exit_status()
+
+    return not exitstatus
+
+# Check if directory exists on remote host
+# TAKES: Paramiko client, remote dir path
+# RETURNS: True if exists, False otherwise
+def dir_exists_remote(client, remotedir):
+    cmd = 'test -d ' + remotedir
+    # execute the snapshot command
+    stdin, stdout, stderr = client.exec_command(cmd)
+
+    exitstatus = stdout.channel.recv_exit_status()
+
+    return not exitstatus
