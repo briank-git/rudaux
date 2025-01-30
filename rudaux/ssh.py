@@ -29,11 +29,11 @@ def copy_remote(client, localfile, remotefile, fromremote=False):
             sftp_client.get(remotefile, localfile)
         else:
             if not os.path.exists(localfile):
-                raise Exception(f"{localfile} does not exist")
+                raise Exception(f"[Errno 2] No such file")
             sftp_client.put(localfile, remotefile)
         return True
     except Exception as e:
-        logger.info(f"Failed to transfer file {localfile} {'from' if fromremote else 'to'} remote:\n {e}")
+        logger.info(f"Failed to transfer file {remotefile if fromremote else localfile} {'from' if fromremote else 'to'} remote:\n {e}")
         return False
     finally:
         sftp_client.close()
