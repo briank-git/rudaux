@@ -439,13 +439,14 @@ def return_solutions(config, pastdue_frac, subm_set):
                     continue
 
                 logger.info(f"Copying solution to {remotefile}")
+
+                if not file_exists_remote(client, subm['student_folder']):
+                    logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
+                    continue
                 
                 if not copy_remote(client,localfile,remotefile):
-                    if not file_exists_remote(client, subm['student_folder']):
-                        logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
-                    else:
-                        sig=signals.FAIL("Solution copy failed")
-                        raise sig
+                    sig=signals.FAIL("Solution copy failed")
+                    raise sig
                 else:
                     logger.info("Solution copied")
             # else:
