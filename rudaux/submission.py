@@ -250,7 +250,7 @@ def build_submission_set(config, subm_set):
         all_posted = all_posted and all([subm['posted_at'] is not None for subm in subm_set[course_name]['submissions']])
         for subm in subm_set[course_name]['submissions']:
             # only check feedback/soln if student folder exists, i.e., they've logged into JHub
-            if file_exists_remote(client, subm['student_folder']):
+            if dir_exists_remote(client, subm['student_folder']):
                 # check that soln was returned
                 all_returned = all_returned and file_exists_remote(client, subm['soln_path'])
                 # check that fdbk was returned or assignment missing + score 0
@@ -438,11 +438,11 @@ def return_solutions(config, pastdue_frac, subm_set):
                     logger.info(f"Solution already returned.")
                     continue
 
-                logger.info(f"Copying solution to {remotefile}")
-
-                if not file_exists_remote(client, subm['student_folder']):
+                if not dir_exists_remote(client, subm['student_folder']):
                     logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping solution return.")
                     continue
+
+                logger.info(f"Copying solution to {remotefile}")
                 
                 if not copy_remote(client,localfile,remotefile):
                     sig=signals.FAIL("Solution copy failed")
