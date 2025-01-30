@@ -13,7 +13,7 @@ from prefect.engine import signals
 from .snapshot import _get_snap_name
 from .utilities import get_logger, recursive_chown
 from bs4 import BeautifulSoup
-from .ssh import ssh_open, copy_remote, file_exists_remote
+from .ssh import ssh_open, copy_remote, file_exists_remote, dir_exists_remote
 
 class GradingStatus(IntEnum):
     ASSIGNED = 0
@@ -488,7 +488,7 @@ def collect_submissions(config, subm_set):
                     remotefile=subm['snapped_assignment_path']
                     
                     if not copy_remote(client, localfile, remotefile, fromremote=True):
-                        sig=signals.FAIL(f"Failed to collect submission {subm['name']} with exit code {exitcode}")
+                        sig=signals.FAIL(f"Failed to collect submission {subm['name']}")
                         raise sig
                     else:
                         logger.info(f"Submission collected")
@@ -889,7 +889,7 @@ def return_feedback(config, pastdue_frac, subm_set):
                     continue
                 if not file_exists_remote(client, subm['fdbk_path']):
                     logger.info(f"Returning feedback for submission {subm['name']}")
-                    if file_exists_remote(subm['student_folder']):
+                    if dir_exists_remote(client, subm['student_folder']):
                         copy_remote(client, subm['generated_feedback_path'], subm['fdbk_path'])
                     else:
                         logger.warning(f"Warning: student folder {subm['student_folder']} doesnt exist. Skipping feedback return.")
