@@ -25,8 +25,11 @@ def copy_remote(client, localfile, remotefile, fromremote=False):
     sftp_client=client.open_sftp()
     try: 
         if fromremote:
+            sftp_client.stat(remotefile)
             sftp_client.get(remotefile, localfile)
         else:
+            if not os.path.exists(localfile):
+                raise Exception(f"{localfile} does not exist")
             sftp_client.put(localfile, remotefile)
         return True
     except Exception as e:
