@@ -20,7 +20,7 @@ def get_date_time(tstmp):
     return pd.Series({"year": dt.year, "month": dt.month, "day": dt.day, "hour": dt.hour, "minute" : dt.minute, "second": dt.second})
 
 dfs = []
-logfiles = os.listdir("docker-events")
+logfiles = sorted(os.listdir("docker-events"))
 itr = 0
 for lf in logfiles:
     fn = os.path.join("docker-events", lf)
@@ -37,15 +37,20 @@ for lf in logfiles:
             continue
         fo.writelines(line.replace('(', '"'
                          ).replace(')', '"'
+                         ).replace("health_status: healthy", "health_healthy"
+		 	 ).replace("health_status: unhealthy", "health_unhealthy"
                          ).replace("exec_create: bash", "exec_create"
                          ).replace("exec_create: /bin/bash", "exec_create"
                          ).replace("exec_start: bash", "exec_start"
                          ).replace("exec_start: /bin/bash", "exec_start"
                          ).replace("exec_create: sh -c cp -a /tmp/user-settings/. /home/jupyter/.jupyter/lab/user-settings", "exec_create"
-                         ).replace("exec_start: sh -c cp -a /tmp/user-settings/. /home/jupyter/.jupyter/lab/user-settings", "exec_start") for line in data)
+                         ).replace("exec_start: sh -c cp -a /tmp/user-settings/. /home/jupyter/.jupyter/lab/user-settings", "exec_start"
+			 ).replace("exec_create: /bin/sh -c wget -O- --no-verbose --tries=1 --no-check-certificate     http${GEN_CERT:+s}://localhost:8888${JUPYTERHUB_SERVICE_PREFIX:-/}api || exit 1", "exec_create"
+			 ).replace("exec_start: /bin/sh -c wget -O- --no-verbose --tries=1 --no-check-certificate     http${GEN_CERT:+s}://localhost:8888${JUPYTERHUB_SERVICE_PREFIX:-/}api || exit 1", "exec_create"
+            ) for line in data)
         fo.seek(0)
 
-    df_tmp = pd.read_table(fo, delim_whitespace=True, header=None)
+    df_tmp = pd.read_table(fo, sep='\s+', header=None)
 
     # rename columns
     df_tmp.columns = ['timestamp', 'type', 'action', 'container', 'info']
@@ -57,7 +62,7 @@ for lf in logfiles:
     df_tmp = df_tmp.merge(df_tmp["timestamp"].apply(get_date_time), left_index=True, right_index=True)
 
     # shorten container (docker stats uses 6 bytes, so keep 6 bytes here too instead of 32)
-    df_tmp["container"] = df_tmp["container"].str[:12] 
+    df_tmp["container"] = df_tmp["container"].str[:12]
 
     # remove unused columns
     df_tmp = df_tmp[["year", "month", "day", "hour", "minute", "second", "user", "type", "action", "container"]]
