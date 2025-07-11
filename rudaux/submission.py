@@ -823,6 +823,16 @@ def generate_feedback(config, subm_set):
                     logger.info(f"HTML for total:\n {fdbk_parsed.body.find('div', {'id':'toc'}).find_previous_sibling('h4').text}")
                     logger.info(f"HTML for individual:\n {fdbk_parsed.body.find('div', {'id':'toc'}).find('ol').findAll('li')}")
 
+                # Add grader's name to top of feedback
+                grader_name = fdbk_parsed.new_tag('h3')
+                grader_name.string = f"Student Canvas ID {subm['student']['id']} graded by {subm['grader']}"
+                container = fdbk_parsed.find('div', class_='container')
+
+                if container:
+                    container.insert(0, grader_name)
+                    with open(subm['generated_feedback_path'], 'w') as f:
+                      f.write(str(fdbk_parsed))
+
                 # STEP 2: load grades from gradebook and compare
                 student = subm['student']
                 try:
