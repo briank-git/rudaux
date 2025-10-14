@@ -825,7 +825,7 @@ def generate_feedback(config, subm_set):
 
                 # Add grader's name to top of feedback
                 grader_name = fdbk_parsed.new_tag('h3')
-                grader_name.string = f"Student Canvas ID {subm['student']['id']} graded by {subm['grader']}"
+                grader_name.string = f"Student Canvas ID {subm['student']['id']} graded by {subm['grader']['name']}"
                 container = fdbk_parsed.find('div', class_='container')
 
                 if container:
