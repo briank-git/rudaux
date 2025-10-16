@@ -8,8 +8,8 @@ from subprocess import check_output, CalledProcessError, STDOUT
 from typing import Optional, List, Callable
 import pendulum as plm
 from bs4 import BeautifulSoup
-from dictauth.users import add_user, remove_user, get_users
-from prefect.exceptions import PrefectSignal
+#from dictauth.users import add_user, remove_user, get_users
+#from prefect.exceptions import PrefectSignal
 import git
 from rudaux.interface.base.grading_system import GradingSystem
 from rudaux.interface.base.submission_system import SubmissionGradingStatus
@@ -17,7 +17,7 @@ from rudaux.model import Submission
 from rudaux.model.grader import Grader
 from rudaux.util.container import run_container
 from nbgrader.api import Gradebook, MissingEntry
-from prefect import get_run_logger
+#from prefect import get_run_logger
 from rudaux.util.util import grader_account_name, recursive_chown
 
 

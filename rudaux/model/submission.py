@@ -1,6 +1,6 @@
 import pendulum as plm
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from rudaux.model.course_section_info import CourseSectionInfo
 from rudaux.model.grader import Grader
 from rudaux.model.student import Student
@@ -8,6 +8,8 @@ from rudaux.model.assignment import Assignment
 
 
 class Submission(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     lms_id: str
     student: Student
     assignment: Assignment

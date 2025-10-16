@@ -1,11 +1,13 @@
 import pendulum as plm
 from typing import Optional, List, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from .override import Override
 from .course_section_info import CourseSectionInfo
 
 
 class Assignment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     lms_id: str
     name: str
     due_at: plm.DateTime

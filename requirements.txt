@@ -9,6 +9,8 @@ pydantic
 requests>=2.23.0
 scp
 urllib3>=1.25.9
+gitpython
+docker
 # git+https://github.com/trevorcampbell/fwirl@main
 # git+https://github.com/ubc-dsci/dictauth@main
 
