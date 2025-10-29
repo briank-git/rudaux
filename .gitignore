@@ -119,4 +119,7 @@ venv.bak/
 # rudaux config file
 **rudaux_config.py
 
+# test dirs
+test_dir_courserepo/*
+
 .idea
