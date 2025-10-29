@@ -20,7 +20,7 @@ def get_learning_management_system(settings, group_name):
 
 # @task
 def get_grading_system(settings, group_name):
-    GrdS = get_class_from_string(settings.gs_classes[group_name])
+    GrdS = get_class_from_string(settings['gs_classes'][group_name])
     if not issubclass(GrdS, GradingSystem):
         raise ValueError
     grds = GrdS.parse_obj(settings)
