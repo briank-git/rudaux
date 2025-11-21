@@ -1,8 +1,10 @@
 import fwirl
+import os
 import pendulum as plm
 import yaml
 from rudaux.flows import load_settings
 from rudaux.tasks import get_grading_system
+import pdb
 
 config_path='./rudaux_config.yml'
 
@@ -16,6 +18,7 @@ course_section_name = 'section_dsci_100_test_01'
 grader_name = 'test_dir_courserepo'
 assignment_id = '5678'
 student_id = '1234'
+assignment_name = 'tutorial_intro'
 
 gradsys = get_grading_system(settings=config, group_name=course_name)
 
@@ -30,9 +33,21 @@ class SubmissionRawAsset(fwirl.Asset):
         self._built = False
         super(SubmissionRawAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
+    # Check if submission exists in grader's submitted directory
     async def build(self):
-        self._built = True
-        self._ts = plm.now()
+        grader_root = config["nbgrader_user_root"] # points to CWD in testing
+        subm_folder = config["nbgrader_submissions_folder"] 
+        nbgrader_path=config["nbgrader_path"]
+        grader_student_id = "student-"+student_id
+        subm_name = assignment_name+".ipynb"
+
+        subm_path = os.path.join(grader_root,grader_name,nbgrader_path,subm_folder,grader_student_id,subm_name)
+
+        if os.path.exists(subm_path):
+            self._built = True
+            self._ts = plm.now()
+        else:
+            raise Exception(f"Raw submission {subm_path} does not exist.")
         return 3
 
     async def timestamp(self):

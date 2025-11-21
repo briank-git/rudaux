@@ -120,6 +120,6 @@ venv.bak/
 **rudaux_config.py
 
 # test dirs
-test_dir_courserepo/*
+test_dir_courserepo
 
 .idea
