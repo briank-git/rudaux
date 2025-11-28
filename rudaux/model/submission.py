@@ -1,5 +1,5 @@
 import pendulum as plm
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, ConfigDict
 from rudaux.model.course_section_info import CourseSectionInfo
 from rudaux.model.grader import Grader
@@ -14,7 +14,7 @@ class Submission(BaseModel):
     student: Student
     assignment: Assignment
     score: int
-    posted_at: plm.DateTime
+    posted_at: Union[plm.DateTime, None]
     late: bool
     missing: bool
     excused: bool

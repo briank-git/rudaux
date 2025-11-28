@@ -1,16 +1,21 @@
-import fwirl
 import os
 import pendulum as plm
 import yaml
+
+import fwirl
+
 from rudaux.flows import load_settings
-from rudaux.tasks import get_grading_system
+#from rudaux.tasks import get_grading_system
+from rudaux.model import Submission, Student, Grader, Assignment, CourseSectionInfo
+from rudaux.fwirl_components.resources import GradingSystemResource
+from rudaux.interface.base.submission_system import SubmissionGradingStatus
+
 import pdb
 
 config_path='./rudaux_config.yml'
 
 with open(config_path) as f:
     config = yaml.safe_load(f)
-#settings=load_settings(config_path)
 
 # Test values
 course_name = 'course_dsci_100_test'
@@ -20,12 +25,24 @@ assignment_id = '5678'
 student_id = '1234'
 assignment_name = 'tutorial_intro'
 
-gradsys = get_grading_system(settings=config, group_name=course_name)
+course_section_info = CourseSectionInfo(lms_id='5555', name='003', code='DSCI 100', start_at=plm.now(), end_at=plm.now(), time_zone='America/Vancouver')
+assignment = Assignment(lms_id=assignment_id, name=assignment_name, due_at=plm.now(), lock_at=plm.now(), unlock_at=plm.now(), overrides={}, published=True, course_section_info=course_section_info, skip=False)
+student = Student(lms_id=student_id, name='test student', sortable_name='test student', school_id='?', reg_date=plm.now(), status='?')
+
+grader_root = config["nbgrader_user_root"] # points to CWD in testing
+subm_folder = config["nbgrader_submissions_folder"] 
+nbgrader_path = config["nbgrader_path"]
+
+subm_folder_path = os.path.join(grader_root,
+                        grader_name,
+                        nbgrader_path,
+                        subm_folder)
+
+grader = Grader(name=grader_name, info={'collected_assignment_path':subm_folder_path}, skip=False)
+submission = Submission(lms_id='34567890', student=student, assignment=assignment, score=0, posted_at=None, late=False, missing=False, excused=False, course_section_info=course_section_info, grader=grader, status=SubmissionGradingStatus.ASSIGNED, skip=False)
 
 # Initialize graph
 graph = fwirl.AssetGraph("rudaux_graph")
-
-# Should assets have reference to config?
 
 # Submitted raw notebook in grader account directory submitted/student-*/*.ipynb
 class SubmissionRawAsset(fwirl.Asset):
@@ -35,19 +52,18 @@ class SubmissionRawAsset(fwirl.Asset):
 
     # Check if submission exists in grader's submitted directory
     async def build(self):
-        grader_root = config["nbgrader_user_root"] # points to CWD in testing
-        subm_folder = config["nbgrader_submissions_folder"] 
-        nbgrader_path=config["nbgrader_path"]
-        grader_student_id = "student-"+student_id
-        subm_name = assignment_name+".ipynb"
+        nbgrader_student_id = config["nbgrader_student_folder_prefix"]+submission.student.lms_id
+        subm_name = submission.assignment.name+".ipynb"
 
-        subm_path = os.path.join(grader_root,grader_name,nbgrader_path,subm_folder,grader_student_id,subm_name)
+        subm_path = os.path.join(grader.info['collected_assignment_path'],
+                                 nbgrader_student_id,
+                                 subm_name)
 
         if os.path.exists(subm_path):
             self._built = True
             self._ts = plm.now()
         else:
-            raise Exception(f"Raw submission {subm_path} does not exist.")
+            raise Exception(f"Raw submission notebook {subm_path} does not exist.")
         return 3
 
     async def timestamp(self):
@@ -60,6 +76,9 @@ class SubmissionCleanedAsset(fwirl.Asset):
         super(SubmissionCleanedAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
+        for r in self.resources:
+            if r.key == 'gradsysresource':
+                r.clean_submission(submission)
         self._built = True
         self._ts = plm.now()
         return 3
@@ -74,6 +93,7 @@ class SubmissionAutogradedAsset(fwirl.Asset):
         super(SubmissionAutogradedAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
+
         self._built = True
         self._ts = plm.now()
         return 3
@@ -113,6 +133,8 @@ class GeneratedFeedbackAsset(fwirl.Asset):
 
 test_assets = []
 
+gradsysresource = GradingSystemResource(key='gradsysresource',settings=config,course_name=course_name)
+
 submission_raw_asset = SubmissionRawAsset(
             key=f"SubmissionRaw_A{assignment_id}_S{student_id}",
             dependencies=[],
@@ -125,7 +147,7 @@ test_assets.append(submission_raw_asset)
 submission_cleaned_asset = SubmissionCleanedAsset(
             key=f"SubmissionCleaned_A{assignment_id}_S{student_id}",
             dependencies=[submission_raw_asset],
-            resources=None,
+            resources=[gradsysresource],
             group=assignment_id,
             subgroup=student_id)
 

@@ -1,6 +1,9 @@
 import fwirl
-import pendulum as plm
 from fwirl.resource import Resource
+
+import os
+import pendulum as plm
+
 from rudaux.task.learning_management_system import get_assignments, get_students, get_course_section_info
 from rudaux.tasks import get_learning_management_system, get_submission_system, get_grading_system
 
@@ -59,8 +62,11 @@ class LMSResource(Resource):
 
 # ------------------------------------------------------------------------------------------------
 class GradingSystemResource(Resource):
-    def __init__(self, key):
+    def __init__(self, key, settings, course_name):
         super().__init__(key)
+        self.course_name = course_name
+        self.settings = settings
+        self.gradsys = get_grading_system(settings=settings, group_name=course_name)
 
     def init(self):
         pass
@@ -68,6 +74,17 @@ class GradingSystemResource(Resource):
     def close(self):
         pass
 
+    def clean_submission(self, submission):
+        self.gradsys.clean_grader_submission(submission)
+
+    def autograde_submission():
+        pass
+
+    def check_manual_grading():
+        pass
+    
+    def generate_feedback():
+        pass
 
 # ------------------------------------------------------------------------------------------------
 class SubmissionSystemResource(Resource):
