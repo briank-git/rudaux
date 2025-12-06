@@ -31,11 +31,9 @@ def _canvas_get(config, course_id, path_suffix, use_group_base=False):
         resp = requests.get(
             url = url if resp is None else resp.links['next']['url'],
             headers = {
-                'Authorization': f'Bearer {token}',
-                'Accept': 'application/json'
+                'Authorization': f'Bearer {token}'
                 },
-            json = {'per_page' : 100},
-            params = {'override_assignment_dates' : False}
+            params = {'override_assignment_dates' : False, 'per_page' : 100}
         )
 
         if resp.status_code < 200 or resp.status_code > 299:
