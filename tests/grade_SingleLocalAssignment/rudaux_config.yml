@@ -107,7 +107,7 @@ nbgrader_jupyterhub_user: 'jovyan'
 nbgrader_jupyterhub_group: 'users'
 
 # the name of the directory in the container to bind to the grader's jhub folder
-nbgrader_docker_bind_folder: '/home/jovyan'
+nbgrader_docker_bind_folder: '/home/jovyan/work'
 
 nbgrader_student_folder_prefix: 'student-'
 

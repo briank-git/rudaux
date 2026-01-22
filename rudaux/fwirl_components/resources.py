@@ -77,8 +77,11 @@ class GradingSystemResource(Resource):
     def clean_submission(self, submission):
         self.gradsys.clean_grader_submission(submission)
 
-    def autograde_submission():
-        pass
+    def autograde_submission(self, submission):
+        self.gradsys.autograde(submission)
+
+    def generate_assignment(self, grader):
+        self.gradsys.generate_assignment(grader)
 
     def check_manual_grading():
         pass

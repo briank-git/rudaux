@@ -31,6 +31,7 @@ student = Student(lms_id=student_id, name='test student', sortable_name='test st
 
 grader_root = config["nbgrader_user_root"] # points to CWD in testing
 subm_folder = config["nbgrader_submissions_folder"] 
+autograded_folder = config["nbgrader_autograded_folder"]
 nbgrader_path = config["nbgrader_path"]
 
 subm_folder_path = os.path.join(grader_root,
@@ -38,11 +39,32 @@ subm_folder_path = os.path.join(grader_root,
                         nbgrader_path,
                         subm_folder)
 
-grader = Grader(name=grader_name, info={'collected_assignment_path':subm_folder_path}, skip=False)
+
+autograded_folder_path = os.path.join(grader_root,
+                        grader_name,
+                        nbgrader_path,
+                        autograded_folder)
+
+grader = Grader(name=grader_name, info={'assignment_name':assignment.name, 'collected_assignment_path':subm_folder_path,'autograded_assignment_path':autograded_folder_path, 'folder':os.path.abspath(os.path.join(grader_root,grader_name,'R'))}, skip=False)
 submission = Submission(lms_id='34567890', student=student, assignment=assignment, score=0, posted_at=None, late=False, missing=False, excused=False, course_section_info=course_section_info, grader=grader, status=SubmissionGradingStatus.ASSIGNED, skip=False)
 
 # Initialize graph
 graph = fwirl.AssetGraph("rudaux_graph")
+
+# Generated assignment with gradebook.db file
+class GeneratedAssignmentAsset(fwirl.Asset):
+    def __init__(self, key, dependencies, resources = None, group = None, subgroup = None):
+        self._built = False
+        super(GeneratedAssignmentAsset,self).__init__(key, dependencies, resources, group, subgroup)
+
+    async def build(self):
+        gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
+        gradsys.generate_assignment(grader)
+        self._built = True
+        self._ts = plm.now()
+    
+    async def timestamp(self):
+        return self._ts if self._built else fwirl.AssetStatus.Unavailable
 
 # Submitted raw notebook in grader account directory submitted/student-*/*.ipynb
 class SubmissionRawAsset(fwirl.Asset):
@@ -50,13 +72,18 @@ class SubmissionRawAsset(fwirl.Asset):
         self._built = False
         super(SubmissionRawAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
-    # Check if submission exists in grader's submitted directory
+    
+    # Download student submission from student server with SCP and place in grader folder
+    # Then confirm if submission exists in grader's submitted directory
     async def build(self):
+        # TODO: Code to download student submission from student server with SCP
+
         nbgrader_student_id = config["nbgrader_student_folder_prefix"]+submission.student.lms_id
         subm_name = submission.assignment.name+".ipynb"
 
         subm_path = os.path.join(grader.info['collected_assignment_path'],
                                  nbgrader_student_id,
+                                 submission.assignment.name,
                                  subm_name)
 
         if os.path.exists(subm_path):
@@ -76,9 +103,8 @@ class SubmissionCleanedAsset(fwirl.Asset):
         super(SubmissionCleanedAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
-        for r in self.resources:
-            if r.key == 'gradsysresource':
-                r.clean_submission(submission)
+        gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
+        gradsys.clean_submission(submission)
         self._built = True
         self._ts = plm.now()
         return 3
@@ -93,9 +119,18 @@ class SubmissionAutogradedAsset(fwirl.Asset):
         super(SubmissionAutogradedAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
+        gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
+        gradsys.autograde_submission(submission)
+        nbgrader_student_id = config["nbgrader_student_folder_prefix"]+submission.student.lms_id
+        subm_name = submission.assignment.name+".ipynb"
 
-        self._built = True
-        self._ts = plm.now()
+        autograded_path = os.path.join(autograded_folder_path, nbgrader_student_id, submission.assignment.name, subm_name)
+
+        if os.path.exists(autograded_path):
+            self._built = True
+            self._ts = plm.now()
+        else:
+            raise Exception(f"Autograded notebook {autograded_path} does not exist.")
         return 3
 
     async def timestamp(self):
@@ -135,9 +170,18 @@ test_assets = []
 
 gradsysresource = GradingSystemResource(key='gradsysresource',settings=config,course_name=course_name)
 
+generated_assignment_asset = GeneratedAssignmentAsset(
+            key=f"GeneratedAssignment_A{assignment_id}_S{student_id}",
+            dependencies=[],
+            resources=[gradsysresource],
+            group=assignment_id,
+            subgroup=student_id)
+
+test_assets.append(generated_assignment_asset)
+
 submission_raw_asset = SubmissionRawAsset(
             key=f"SubmissionRaw_A{assignment_id}_S{student_id}",
-            dependencies=[],
+            dependencies=[generated_assignment_asset],
             resources=None,
             group=assignment_id,
             subgroup=student_id)
@@ -156,7 +200,7 @@ test_assets.append(submission_cleaned_asset)
 submission_autograded_asset = SubmissionAutogradedAsset(
             key=f"SubmissionAutoGraded_A{assignment_id}_S{student_id}",
             dependencies=[submission_cleaned_asset],
-            resources=None,
+            resources=[gradsysresource],
             group=assignment_id,
             subgroup=student_id)
 
@@ -165,7 +209,7 @@ test_assets.append(submission_autograded_asset)
 submission_manually_graded_asset = SubmissionManuallyGradedAsset(
             key=f"SubmissionManuallyGraded_A{assignment_id}_S{student_id}",
             dependencies=[submission_autograded_asset],
-            resources=None,
+            resources=[gradsysresource],
             group=assignment_id,
             subgroup=student_id)
 
@@ -174,7 +218,7 @@ test_assets.append(submission_manually_graded_asset)
 generated_feedback_asset = GeneratedFeedbackAsset(
             key=f"GeneratedFeedback_A{assignment_id}_S{student_id}",
             dependencies=[submission_manually_graded_asset],
-            resources=None,
+            resources=[gradsysresource],
             group=assignment_id,
             subgroup=student_id)
 

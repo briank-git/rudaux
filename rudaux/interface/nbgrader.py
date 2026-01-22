@@ -106,26 +106,26 @@ class NBGrader(GradingSystem):
 
         assignment_name = grader.info['assignment_name']
         work_dir = grader.info['folder']
-        grader_name = grader.info['name']
+        grader_name = grader.name
 
         # if the assignment hasn't been generated yet, generate it
         generated_assignments = self._get_generated_assignments(work_dir=work_dir)
 
         if assignment_name not in generated_assignments['log']:
-            logger.info(f"Assignment {assignment_name} not yet generated for grader {grader_name}")
+            print(f"Assignment {assignment_name} not yet generated for grader {grader_name}")
 
             output = run_container(
                 command=f"nbgrader generate_assignment --force {assignment_name}",
                 docker_image=self.nbgrader_docker_image,
-                docker_memory=self.nbgrader_docker_memory, work_dir=work_dir)
+                docker_memory=self.nbgrader_docker_memory,
+                work_dir=work_dir, 
+                ctr_bind_dir=self.nbgrader_docker_bind_folder)
 
-            logger.info(output['log'])
+            print(output['log'])
 
             if 'ERROR' in output['log']:
-                msg = f"Error generating assignment {assignment_name} for grader " \
-                      f"{grader.info['name']} at path {work_dir}"
-                logger.error(msg)
-                #
+                print(f"Error generating assignment {assignment_name} for grader {grader.name} at path {work_dir}")
+                
 
     # -----------------------------------------------------------------------------------------
     def generate_solution(self, grader: Grader):
@@ -388,8 +388,11 @@ class NBGrader(GradingSystem):
                   f"--assignment={assignment.name} " \
                   f"--student={self.nbgrader_student_folder_prefix}{student.lms_id}"
 
-        output = run_container(command=command, docker_image=self.nbgrader_docker_image,
-                               docker_memory=self.nbgrader_docker_memory, work_dir=work_dir)
+        output = run_container(command=command, 
+                               docker_image=self.nbgrader_docker_image,
+                               docker_memory=self.nbgrader_docker_memory, 
+                               work_dir=work_dir, 
+                               ctr_bind_dir=self.nbgrader_docker_bind_folder)
 
         # validate the results
         if 'ERROR' in output['log']:
@@ -691,7 +694,7 @@ class NBGrader(GradingSystem):
         try:
             nbgrader_student_id = self.nbgrader_student_folder_prefix + student.lms_id
             subm_name = assignment.name + ".ipynb"
-            collected_assignment_path = os.path.join(grader.info['collected_assignment_path'],nbgrader_student_id,subm_name)
+            collected_assignment_path = os.path.join(grader.info['collected_assignment_path'],nbgrader_student_id,assignment.name,subm_name)
             f = open(collected_assignment_path, 'r')
             nb = json.load(f)
             f.close()
