@@ -194,18 +194,18 @@ class NBGrader(GradingSystem):
                       f"--student={self.nbgrader_student_folder_prefix}{submission.student.lms_id}"
 
             output = run_container(command=command, docker_image=self.nbgrader_docker_image,
-                                   docker_memory=self.nbgrader_docker_memory, work_dir=work_dir)
+                                   docker_memory=self.nbgrader_docker_memory, work_dir=work_dir,ctr_bind_dir=self.nbgrader_docker_bind_folder)
 
             if not os.path.exists(grader.info['generated_feedback_path']):
                 logger.info(
                     f"Docker error generating feedback for submission {submission.lms_id}: "
-                    f"did not generate expected file at {grader.info['generated_feedback_path']}")
+                    f"did not generate expected file at {grader.info['generated_feedback_path']} {output}")
                 if attempt < attempts - 1:
                     logger.info("Trying again...")
                     continue
                 else:
                     msg = f"Docker error generating feedback for submission {submission.lms_id}: " \
-                          f"did not generate expected file at {grader.info['generated_feedback_path']}"
+                          f"did not generate expected file at {grader.info['generated_feedback_path']} {output}"
                     logger.error(msg)
                     #
 
@@ -692,10 +692,7 @@ class NBGrader(GradingSystem):
 
         # open the student's notebook
         try:
-            nbgrader_student_id = self.nbgrader_student_folder_prefix + student.lms_id
-            subm_name = assignment.name + ".ipynb"
-            collected_assignment_path = os.path.join(grader.info['collected_assignment_path'],nbgrader_student_id,assignment.name,subm_name)
-            f = open(collected_assignment_path, 'r')
+            f = open(grader.info['collected_assignment_path'], 'r')
             nb = json.load(f)
             f.close()
 
@@ -764,7 +761,7 @@ class NBGrader(GradingSystem):
                 cell_ids.add(cell_id)
 
         # write the sanitized notebook back to the submitted folder
-        f = open(collected_assignment_path, 'w')
+        f = open(grader.info['collected_assignment_path'], 'w')
         json.dump(nb, f)
         f.close()
 

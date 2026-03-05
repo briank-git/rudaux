@@ -32,20 +32,36 @@ student = Student(lms_id=student_id, name='test student', sortable_name='test st
 grader_root = config["nbgrader_user_root"] # points to CWD in testing
 subm_folder = config["nbgrader_submissions_folder"] 
 autograded_folder = config["nbgrader_autograded_folder"]
+feedback_folder = config["nbgrader_feedback_folder"]
 nbgrader_path = config["nbgrader_path"]
 
-subm_folder_path = os.path.join(grader_root,
+subm_file_path = os.path.join(grader_root,
                         grader_name,
                         nbgrader_path,
-                        subm_folder)
+                        subm_folder,
+                        config["nbgrader_student_folder_prefix"]+student_id,
+                        assignment_name,
+                        assignment_name+'.ipynb')
 
 
-autograded_folder_path = os.path.join(grader_root,
+
+autograded_file_path = os.path.join(grader_root,
                         grader_name,
                         nbgrader_path,
-                        autograded_folder)
+                        autograded_folder,
+                        config["nbgrader_student_folder_prefix"]+student_id,
+                        assignment_name,
+                        assignment_name+'.ipynb')
 
-grader = Grader(name=grader_name, info={'assignment_name':assignment.name, 'collected_assignment_path':subm_folder_path,'autograded_assignment_path':autograded_folder_path, 'folder':os.path.abspath(os.path.join(grader_root,grader_name,'R'))}, skip=False)
+feedback_file_path = os.path.join(grader_root,
+                        grader_name,
+                        nbgrader_path,
+                        feedback_folder,
+                        config["nbgrader_student_folder_prefix"]+student_id,
+                        assignment_name,
+                        assignment_name+'.html')
+
+grader = Grader(name=grader_name, info={'assignment_name':assignment.name, 'collected_assignment_path':subm_file_path,'autograded_assignment_path':autograded_file_path, 'generated_feedback_path':feedback_file_path,'folder':os.path.abspath(os.path.join(grader_root,grader_name,'R'))}, skip=False)
 submission = Submission(lms_id='34567890', student=student, assignment=assignment, score=0, posted_at=None, late=False, missing=False, excused=False, course_section_info=course_section_info, grader=grader, status=SubmissionGradingStatus.ASSIGNED, skip=False)
 
 # Initialize graph
@@ -78,19 +94,11 @@ class SubmissionRawAsset(fwirl.Asset):
     async def build(self):
         # TODO: Code to download student submission from student server with SCP
 
-        nbgrader_student_id = config["nbgrader_student_folder_prefix"]+submission.student.lms_id
-        subm_name = submission.assignment.name+".ipynb"
-
-        subm_path = os.path.join(grader.info['collected_assignment_path'],
-                                 nbgrader_student_id,
-                                 submission.assignment.name,
-                                 subm_name)
-
-        if os.path.exists(subm_path):
+        if os.path.exists(grader.info['collected_assignment_path']):
             self._built = True
             self._ts = plm.now()
         else:
-            raise Exception(f"Raw submission notebook {subm_path} does not exist.")
+            raise Exception(f"Raw submission notebook {grader.info['collected_assignment_path']} does not exist.")
         return 3
 
     async def timestamp(self):
@@ -121,16 +129,12 @@ class SubmissionAutogradedAsset(fwirl.Asset):
     async def build(self):
         gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
         gradsys.autograde_submission(submission)
-        nbgrader_student_id = config["nbgrader_student_folder_prefix"]+submission.student.lms_id
-        subm_name = submission.assignment.name+".ipynb"
 
-        autograded_path = os.path.join(autograded_folder_path, nbgrader_student_id, submission.assignment.name, subm_name)
-
-        if os.path.exists(autograded_path):
+        if os.path.exists(grader.info['autograded_assignment_path']):
             self._built = True
             self._ts = plm.now()
         else:
-            raise Exception(f"Autograded notebook {autograded_path} does not exist.")
+            raise Exception(f"Autograded notebook {grader.info['autograded_assignment_path']} does not exist.")
         return 3
 
     async def timestamp(self):
@@ -143,8 +147,14 @@ class SubmissionManuallyGradedAsset(fwirl.Asset):
         super(SubmissionManuallyGradedAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
-        self._built = True
-        self._ts = plm.now()
+        gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
+        gradsys.check_manual_grading(submission)
+
+        if submission.status is SubmissionGradingStatus.DONE_GRADING:
+            self._built = True
+            self._ts = plm.now()
+        else:
+            raise Exception(f"Submission {submission.assignment.name} for {submission.student.name} LMS ID {submission.student.lms_id} needs manual grade.")
         return 3
 
     async def timestamp(self):
@@ -157,8 +167,14 @@ class GeneratedFeedbackAsset(fwirl.Asset):
         super(GeneratedFeedbackAsset,self).__init__(key, dependencies, resources, group, subgroup)
 
     async def build(self):
-        self._built = True
-        self._ts = plm.now()
+        gradsys = next(r for r in self.resources if r.key == 'gradsysresource')
+        gradsys.generate_feedback(submission)
+
+        if os.path.exists(grader.info['generated_feedback_path']):
+            self._built = True
+            self._ts = plm.now()
+        else:
+            raise Exception(f"Autograded notebook {grader.info['generated_feedback_path']} does not exist.")
         return 3
 
     async def timestamp(self):

@@ -83,11 +83,11 @@ class GradingSystemResource(Resource):
     def generate_assignment(self, grader):
         self.gradsys.generate_assignment(grader)
 
-    def check_manual_grading():
-        pass
+    def check_manual_grading(self, submission):
+        self.gradsys.get_needs_manual_grading(submission)
     
-    def generate_feedback():
-        pass
+    def generate_feedback(self, submission):
+        self.gradsys.generate_feedback(submission)
 
 # ------------------------------------------------------------------------------------------------
 class SubmissionSystemResource(Resource):
