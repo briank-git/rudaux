@@ -85,7 +85,7 @@ class NBGrader(GradingSystem):
     def _get_generated_assignments(self, work_dir: str) -> dict:
         generated_assignments = run_container(
             command='nbgrader db assignment list', docker_image=self.nbgrader_docker_image,
-            docker_memory=self.nbgrader_docker_memory, work_dir=work_dir)
+            docker_memory=self.nbgrader_docker_memory, work_dir=work_dir, ctr_bind_dir=self.nbgrader_docker_bind_folder)
         return generated_assignments
 
     # -----------------------------------------------------------------------------------------
