@@ -120,6 +120,10 @@ venv.bak/
 **rudaux_config.py
 
 # test dirs
+<<<<<<< HEAD
 test_dir_courserepo/
+=======
+test_dir_courserepo/*
+>>>>>>> 2b7a675 (Add grade single notebook test)
 
 .idea
