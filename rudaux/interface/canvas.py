@@ -83,7 +83,24 @@ class Canvas(LearningManagementSystem):
     
     # ---------------------------------------------------------------------------------------------------
     def get_instructors(self, course_section_name: str) -> Dict[str, Instructor]:
-        pass
+        section = self._canvas_api_instances[course_section_name]
+        instructors = {}
+        enrollments_dict = {e.user['id']:e for e in section.get_enrollments()}
+
+        for s in section.get_users(enrollment_type=['teacher']):
+            instructors[str(s.id)] = Instructor(
+                                        lms_id=str(s.id), 
+                                        name=s.name, 
+                                        sortable_name=s.sortable_name, 
+                                        school_id=s.sis_user_id, 
+                                        reg_date=plm.parse(s.created_at) if s.created_at is not None else plm.parse(s.updated_at),
+                                        status=enrollments_dict[s.id].enrollment_state
+                                    )
+            
+        logger.info(f"Retrieved {len(instructors)} instructors from {section.name}")
+        logger.debug(instructors)
+
+        return instructors
 
     # ---------------------------------------------------------------------------------------------------
     def get_tas(self, course_section_name: str):
