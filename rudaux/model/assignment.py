@@ -10,10 +10,11 @@ class Assignment(BaseModel):
 
     lms_id: str
     name: str
-    due_at: plm.DateTime
-    lock_at: plm.DateTime
-    unlock_at: plm.DateTime
+    due_at: plm.DateTime | None
+    lock_at: plm.DateTime | None
+    unlock_at: plm.DateTime | None
     overrides: Dict[str, Override]
+    only_visible_to_overrides: bool
     published: bool
     course_section_info: CourseSectionInfo
     skip: bool

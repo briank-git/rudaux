@@ -10,8 +10,8 @@ class Override(BaseModel):
 
     lms_id: str
     name: Optional[str] = None
-    due_at: plm.DateTime
-    lock_at: plm.DateTime
-    unlock_at: plm.DateTime
-    students: Dict[str, Student]
+    due_at: plm.DateTime | None
+    lock_at: plm.DateTime | None
+    unlock_at: plm.DateTime | None
+    students: Dict[str, Student] | None
     course_section_info: CourseSectionInfo

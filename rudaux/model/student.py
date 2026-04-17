@@ -8,6 +8,6 @@ class Student(BaseModel):
     lms_id: str
     name: str
     sortable_name: str
-    school_id: str
+    school_id: str | None
     reg_date: plm.DateTime
     status: str
