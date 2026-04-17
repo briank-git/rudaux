@@ -6,6 +6,7 @@ import pendulum as plm
 
 from rudaux.task.learning_management_system import get_assignments, get_students, get_course_section_info
 from rudaux.tasks import get_learning_management_system, get_submission_system, get_grading_system
+from rudaux.model import Assignment
 
 
 # ------------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ class LMSResource(Resource):
         self.list_of_instructors = None
         self.list_of_tas = None
         self.list_of_assignments = None
+        self.list_of_submissions = None
         self.list_of_graders = None
         self.last_request_time = None
         self.result_life_span = plm.duration(minutes=15)
@@ -78,6 +80,18 @@ class LMSResource(Resource):
                 course_section_name=course_section_name
             )
         return self.list_of_assignments
+    
+    def get_submissions(self, course_section_name:str, assignment: Assignment):
+        if self.list_of_submissions is None \
+                or (plm.now() - self.results_timestamps['list_of_submissions']) > self.result_life_span:
+            self.results_timestamps['list_of_submissions'] = plm.now()
+            self.list_of_submissions = self.lms.get_submissions(
+                course_group_name=self.course_name,
+                course_section_name=course_section_name,
+                assignment=assignment
+            )
+        return self.list_of_submissions
+
 
 
 # ------------------------------------------------------------------------------------------------

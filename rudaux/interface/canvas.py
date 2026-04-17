@@ -164,7 +164,38 @@ class Canvas(LearningManagementSystem):
 
     # ---------------------------------------------------------------------------------------------------
     def get_submissions(self, course_group_name: str, course_section_name: str, assignment: Assignment) -> List[Submission]:
-        pass
+        section = self._canvas_api_instances[course_section_name]
+        submissions = []
+
+        course_section_info = self.get_course_section_info(course_section_name)
+        students = self.get_students(course_section_name)
+
+        for s in section.get_assignment(int(assignment.lms_id)).get_submissions():
+            # Filter out non-existent students e.g. Test Student
+            if str(s.user_id) not in students:
+                continue
+
+            submission = Submission(
+                             lms_id=str(s.id),
+                             student=students[str(s.user_id)],
+                             assignment=assignment,
+                             score=s.score,
+                             posted_at=plm.parse(s.posted_at) if s.posted_at is not None else None,
+                             late=s.late,
+                             missing=s.missing,
+                             excused=s.excused if s.excused is not None else False,
+                             course_section_info=course_section_info,
+                             grader=None,
+                             status=SubmissionGradingStatus.NOT_ASSIGNED,
+                             skip=True if s.posted_at is not None else False
+                            )
+            
+            submissions.append(submission)
+
+        logger.info(f"Retrieved {len(submissions)} submissions for {assignment.name}")
+        logger.debug(submissions)
+
+        return submissions
         
     # ---------------------------------------------------------------------------------------------------
     def update_grade(self, course_section_name: str, submission: Submission):

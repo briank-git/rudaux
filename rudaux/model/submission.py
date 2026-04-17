@@ -13,8 +13,8 @@ class Submission(BaseModel):
     lms_id: str
     student: Student
     assignment: Assignment
-    score: int
-    posted_at: Union[plm.DateTime, None]
+    score: int | None
+    posted_at: plm.DateTime | None
     late: bool
     missing: bool
     excused: bool
