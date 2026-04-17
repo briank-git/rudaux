@@ -19,6 +19,7 @@ class LMSResource(Resource):
         self.course_section_info = None
         self.list_of_students = None
         self.list_of_instructors = None
+        self.list_of_tas = None
         self.list_of_assignments = None
         self.list_of_graders = None
         self.last_request_time = None
@@ -58,6 +59,15 @@ class LMSResource(Resource):
                 course_section_name=course_section_name
             )
         return self.list_of_instructors
+    
+    def get_tas(self, course_section_name: str):
+        if self.list_of_tas is None \
+                or (plm.now() - self.results_timestamps['list_of_tas']) > self.result_life_span:
+            self.results_timestamps['l ist_of_tas'] = plm.now()
+            self.list_of_instructors = self.lms.get_tas(
+                course_section_name=course_section_name
+            )
+        return self.list_of_tas
 
     def get_assignments(self, course_section_name):
         if self.list_of_assignments is None \

@@ -87,14 +87,14 @@ class Canvas(LearningManagementSystem):
         instructors = {}
         enrollments_dict = {e.user['id']:e for e in section.get_enrollments()}
 
-        for s in section.get_users(enrollment_type=['teacher']):
-            instructors[str(s.id)] = Instructor(
-                                        lms_id=str(s.id), 
-                                        name=s.name, 
-                                        sortable_name=s.sortable_name, 
-                                        school_id=s.sis_user_id, 
-                                        reg_date=plm.parse(s.created_at) if s.created_at is not None else plm.parse(s.updated_at),
-                                        status=enrollments_dict[s.id].enrollment_state
+        for i in section.get_users(enrollment_type=['teacher']):
+            instructors[str(i.id)] = Instructor(
+                                        lms_id=str(i.id), 
+                                        name=i.name, 
+                                        sortable_name=i.sortable_name, 
+                                        school_id=i.sis_user_id, 
+                                        reg_date=plm.parse(i.created_at) if i.created_at is not None else plm.parse(i.updated_at),
+                                        status=enrollments_dict[i.id].enrollment_state
                                     )
             
         logger.info(f"Retrieved {len(instructors)} instructors from {section.name}")
@@ -104,7 +104,24 @@ class Canvas(LearningManagementSystem):
 
     # ---------------------------------------------------------------------------------------------------
     def get_tas(self, course_section_name: str):
-        pass
+        section = self._canvas_api_instances[course_section_name]
+        tas = {}
+        enrollments_dict = {e.user['id']:e for e in section.get_enrollments()}
+
+        for t in section.get_users(enrollment_type=['ta']):
+            tas[str(t.id)] = Instructor(
+                                        lms_id=str(t.id), 
+                                        name=t.name, 
+                                        sortable_name=t.sortable_name, 
+                                        school_id=t.sis_user_id, 
+                                        reg_date=plm.parse(t.created_at) if t.created_at is not None else plm.parse(t.updated_at),
+                                        status=enrollments_dict[t.id].enrollment_state
+                                    )
+            
+        logger.info(f"Retrieved {len(tas)} TAs from {section.name}")
+        logger.debug(tas)
+
+        return tas
 
     # ---------------------------------------------------------------------------------------------------
     def get_groups(self, course_section_name: str):
