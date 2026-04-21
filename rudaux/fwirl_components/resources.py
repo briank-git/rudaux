@@ -22,7 +22,7 @@ class LMSResource(Resource):
         self.list_of_instructors = None
         self.list_of_tas = None
         self.list_of_assignments = None
-        self.list_of_submissions = None
+        self.dict_of_submissions = None
         self.list_of_graders = None
         self.last_request_time = None
         self.result_life_span = plm.duration(minutes=15)
@@ -82,15 +82,19 @@ class LMSResource(Resource):
         return self.list_of_assignments
     
     def get_submissions(self, course_section_name:str, assignment: Assignment):
-        if self.list_of_submissions is None \
-                or (plm.now() - self.results_timestamps['list_of_submissions']) > self.result_life_span:
-            self.results_timestamps['list_of_submissions'] = plm.now()
-            self.list_of_submissions = self.lms.get_submissions(
+        if self.dict_of_submissions is None or assignment.lms_id not in self.dict_of_submissions \
+                or (plm.now() - self.results_timestamps[f'dict_of_submissions_{assignment.lms_id}']) > self.result_life_span:
+            self.results_timestamps[f'dict_of_submissions_{assignment.lms_id}'] = plm.now()
+
+            if self.dict_of_submissions is None:
+                self.dict_of_submissions = {}
+                
+            self.dict_of_submissions[str(assignment.lms_id)] = self.lms.get_submissions(
                 course_group_name=self.course_name,
                 course_section_name=course_section_name,
                 assignment=assignment
             )
-        return self.list_of_submissions
+        return self.dict_of_submissions[str(assignment.lms_id)]
 
 
 
