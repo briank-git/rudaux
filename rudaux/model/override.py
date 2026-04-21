@@ -14,4 +14,5 @@ class Override(BaseModel):
     lock_at: plm.DateTime | None
     unlock_at: plm.DateTime | None
     students: Dict[str, Student] | None
+    course_section_id: str | None
     course_section_info: CourseSectionInfo
