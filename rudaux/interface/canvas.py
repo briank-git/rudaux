@@ -148,8 +148,8 @@ class Canvas(LearningManagementSystem):
                                                                               due_at=plm.parse(o.due_at) if o.due_at is not None else None,
                                                                               lock_at=plm.parse(o.lock_at) if o.lock_at is not None else None,
                                                                               unlock_at=plm.parse(o.unlock_at) if o.unlock_at is not None else None,
-                                                                              students={str(sid):students[str(sid)] for sid in o.student_ids} if o.student_ids is not None else None,
-                                                                              course_section_id=str(o.course_section_id) if o.course_section_id is not None else None,
+                                                                              students={str(sid):students[str(sid)] for sid in o.student_ids} if hasattr(o, 'student_ids') else None,
+                                                                              course_section_id=str(o.course_section_id) if hasattr(o, 'course_section_id') else None,
                                                                               course_section_info=course_section_info
                                                                              ) for o in a.get_overrides()},
                                                 only_visible_to_overrides=a.only_visible_to_overrides,
