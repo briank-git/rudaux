@@ -16,3 +16,4 @@ class Override(BaseModel):
     students: Dict[str, Student] | None
     course_section_id: str | None
     course_section_info: CourseSectionInfo
+    assignment_id: str
