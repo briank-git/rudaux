@@ -44,21 +44,21 @@ class Canvas(LearningManagementSystem):
     def get_course_section_info(self, course_section_name: str) -> CourseSectionInfo:
         section = self._canvas_api_instances[course_section_name]
 
-        processed_info = {
-                          "lms_id": str(section.id),
-                          "name": section.name,
-                          "code": section.course_code,
-                          "start_at": None if section.start_at is None else plm.parse(section.start_at),
-                          "end_at": None if section.end_at is None else plm.parse(section.end_at),
-                          "time_zone": section.time_zone
-                         }
+        course_section_info = CourseSectionInfo(
+                                                lms_id=str(section.id),
+                                                name=section.name,
+                                                code=section.course_code,
+                                                start_at=None if section.start_at is None else plm.parse(section.start_at),
+                                                end_at=None if section.end_at is None else plm.parse(section.end_at),
+                                                time_zone=section.time_zone
+                                               )
         
         logger.info(f"Retrieved course section info for {section.name}")
-        logger.debug(f"Processed info {processed_info}")
-        if processed_info['start_at'] is None or processed_info['end_at'] is None:
+        logger.debug(f"Processed info {course_section_info}")
+        if course_section_info.start_at is None or course_section_info.end_at is None:
             logger.warning(f"Course start or end date has not been set for section {section.name}")
 
-        return processed_info
+        return course_section_info
 
     # ---------------------------------------------------------------------------------------------------
     def get_students(self, course_section_name) -> Dict[str, Student]:

@@ -9,6 +9,6 @@ class CourseSectionInfo(BaseModel):
     lms_id: str
     name: str
     code: str
-    start_at: plm.DateTime
-    end_at: plm.DateTime
+    start_at: plm.DateTime | None
+    end_at: plm.DateTime | None
     time_zone: str
