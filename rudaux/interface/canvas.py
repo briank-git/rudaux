@@ -177,19 +177,19 @@ class Canvas(LearningManagementSystem):
                 continue
 
             submission = Submission(
-                             lms_id=str(s.id),
-                             student=students[str(s.user_id)],
-                             assignment=assignment,
-                             score=s.score,
-                             posted_at=plm.parse(s.posted_at) if s.posted_at is not None else None,
-                             late=s.late,
-                             missing=s.missing,
-                             excused=s.excused if s.excused is not None else False,
-                             course_section_info=course_section_info,
-                             grader=None,
-                             status=SubmissionGradingStatus.NOT_ASSIGNED,
-                             skip=True if s.posted_at is not None else False
-                            )
+                                    lms_id=str(s.id),
+                                    student=students[str(s.user_id)],
+                                    assignment=assignment,
+                                    score=s.score,
+                                    posted_at=plm.parse(s.posted_at) if s.posted_at is not None else None,
+                                    late=s.late,
+                                    missing=s.missing,
+                                    excused=s.excused if s.excused is not None else False,
+                                    course_section_info=course_section_info,
+                                    grader=None,
+                                    status=SubmissionGradingStatus.NOT_ASSIGNED,
+                                    skip=True if s.posted_at is not None else False
+                                   )
             
             submissions.append(submission)
 
