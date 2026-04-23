@@ -200,7 +200,22 @@ class Canvas(LearningManagementSystem):
         
     # ---------------------------------------------------------------------------------------------------
     def update_grade(self, course_section_name: str, submission: Submission):
-        pass
+        section = self._canvas_api_instances[course_section_name]
+        canvas_submission = section.get_assignment(submission.assignment.lms_id).get_submission(submission.student.lms_id)
+
+        if canvas_submission.score is not None:
+            logger.warning(f'Grade already set to {canvas_submission.score} for {submission.assignment.name}, student: {submission.student.name} - {submission.student.lms_id}')
+            logger.warning(f'Reset student grade to - (no grade) on Canvas if current grade is incorrect')
+            return
+
+        canvas_submission.edit(submission={'posted_grade':submission.score})
+
+        # Confirm uploaded grade
+        canvas_submission = section.get_assignment(submission.assignment.lms_id).get_submission(submission.student.lms_id)
+        if abs(float(submission.score) - float(canvas_submission.score)) > 0.01:
+            raise ValueError(f"Grade {submission.score} failed to upload for submission {submission.assignment.name} by student {submission.student.name} - {submission.student.lms_id}; grade on canvas is {canvas_submission.score}")
+        
+        logger.info(f'Uploaded grade {canvas_submission.score} for {submission.assignment.name}, student: {submission.student.name} - {submission.student.lms_id}')
 
     # ---------------------------------------------------------------------------------------------------
     def update_override(self, course_name: str, override: Override):

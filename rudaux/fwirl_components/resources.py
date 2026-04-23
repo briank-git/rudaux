@@ -6,7 +6,7 @@ import pendulum as plm
 
 from rudaux.task.learning_management_system import get_assignments, get_students, get_course_section_info
 from rudaux.tasks import get_learning_management_system, get_submission_system, get_grading_system
-from rudaux.model import Assignment
+from rudaux.model import Assignment, Submission
 
 
 # ------------------------------------------------------------------------------------------------
@@ -88,14 +88,16 @@ class LMSResource(Resource):
 
             if self.dict_of_submissions is None:
                 self.dict_of_submissions = {}
-                
+
             self.dict_of_submissions[str(assignment.lms_id)] = self.lms.get_submissions(
                 course_group_name=self.course_name,
                 course_section_name=course_section_name,
                 assignment=assignment
             )
         return self.dict_of_submissions[str(assignment.lms_id)]
-
+    
+    def update_grade(self, course_section_name:str, submission: Submission):
+        self.lms.update_grade(course_section_name, submission)
 
 
 # ------------------------------------------------------------------------------------------------
