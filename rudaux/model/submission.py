@@ -13,7 +13,7 @@ class Submission(BaseModel):
     lms_id: str
     student: Student
     assignment: Assignment
-    score: int | None
+    score: float | None
     posted_at: plm.DateTime | None
     late: bool
     missing: bool
