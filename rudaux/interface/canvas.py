@@ -219,15 +219,45 @@ class Canvas(LearningManagementSystem):
         logger.info(f'Uploaded grade {canvas_submission.score} for {submission.assignment.name}, student: {submission.student.name} - {submission.student.lms_id}')
 
     # ---------------------------------------------------------------------------------------------------
-    def update_override(self, course_name: str, override: Override):
-        pass
+    def update_override(self, course_section_name: str, override: Override):
+        section = self._canvas_api_instances[course_section_name]
+        canvas_assignment = section.get_assignment(override.assignment_id)
+        canvas_override = canvas_assignment.get_override(override.lms_id)
+
+        canvas_override.edit(assignment_override={
+                                                  'student_ids':[int(id) for id in override.students.keys()],
+                                                  'title':override.name,
+                                                  'due_at':override.due_at, 
+                                                  'unlock_at':override.unlock_at, 
+                                                  'lock_at':override.lock_at
+                                                 })
+        
+        logger.info(f"Updated override for {canvas_assignment.name} in {course_section_name} \n\n {override} \n")
 
     # ---------------------------------------------------------------------------------------------------
-    def create_overrides(self, course_section_name: str, assignment: Assignment, overrides: List[Override]):
-        pass
+    def create_overrides(self, course_section_name: str, overrides: List[Override]):
+        section = self._canvas_api_instances[course_section_name]
 
+        for o in overrides:
+            a = section.get_assignment(o.assignment_id)
+            canvas_override = a.create_override(assignment_override={
+                                                   'student_ids':[int(id) for id in o.students.keys()],
+                                                   'title':o.name,
+                                                   'due_at':o.due_at,
+                                                   'unlock_at':o.unlock_at,
+                                                   'lock_at':o.lock_at
+                                                  })
+            o.lms_id = str(canvas_override.id)
+            logger.info(f'Created override for {a.name} in {course_section_name} \n\n {o} \n')
+
+        
     # ---------------------------------------------------------------------------------------------------
-    def delete_overrides(self, course_section_name: str, assignment: Assignment, overrides: List[Override]):
-        pass
+    def delete_overrides(self, course_section_name: str, overrides: List[Override]):
+        section = self._canvas_api_instances[course_section_name]
+
+        for o in overrides:
+            a = section.get_assignment(o.assignment_id)
+            a.get_override(o.lms_id).delete()
+            logger.info(f'Deleted override for {a.name} in {course_section_name} \n\n {o} \n')
 
     

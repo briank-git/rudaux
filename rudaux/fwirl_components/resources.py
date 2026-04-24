@@ -4,9 +4,11 @@ from fwirl.resource import Resource
 import os
 import pendulum as plm
 
+from typing import List
+
 from rudaux.task.learning_management_system import get_assignments, get_students, get_course_section_info
 from rudaux.tasks import get_learning_management_system, get_submission_system, get_grading_system
-from rudaux.model import Assignment, Submission
+from rudaux.model import Assignment, Submission, Override
 
 
 # ------------------------------------------------------------------------------------------------
@@ -99,6 +101,14 @@ class LMSResource(Resource):
     def update_grade(self, course_section_name:str, submission: Submission):
         self.lms.update_grade(course_section_name, submission)
 
+    def update_override(self, course_section_name:str, override:Override):
+        self.lms.update_override(course_section_name, override)
+
+    def create_overrides(self, course_section_name:str, overrides:List[Override]):
+        self.lms.create_overrides(course_section_name, overrides)
+
+    def delete_overrides(self, course_section_name:str, overrides:List[Override]):
+        self.lms.delete_overrides(course_section_name, overrides)
 
 # ------------------------------------------------------------------------------------------------
 class GradingSystemResource(Resource):
