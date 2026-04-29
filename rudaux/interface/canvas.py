@@ -140,6 +140,9 @@ class Canvas(LearningManagementSystem):
         students = self.get_students(course_section_name)
 
         for a in section.get_assignments():
+            if a.name not in list(self.assignments.values())[0]:
+                continue
+
             assignments[str(a.id)] = Assignment(
                                                 lms_id=str(a.id),
                                                 name=a.name,
@@ -165,6 +168,16 @@ class Canvas(LearningManagementSystem):
         
         logger.info(f"Retrieved {len(assignments)} assignments from {section.name}")
         logger.debug(assignments)
+
+        ids = [a.lms_id for a in assignments.values()]
+        names = [a.name for a in assignments.values()]
+
+        if len(set(ids)) != len(ids):
+            raise ValueError(f"Course ID {str(section.id)}: Two assignments detected with the same ID. IDs: {ids}")
+        if len(set(names)) != len(names):
+            raise ValueError(f"Course ID {str(section.id)}: Two assignments detected with the same name. Names: {names}")
+        if len(names) < len(list(self.assignments.values())[0]):
+            raise ValueError(f"Assignments from config missing in the course LMS.\nConfig: {list(self.assignments.values())[0]}\nLMS: {names}")
 
         return(assignments)
 
