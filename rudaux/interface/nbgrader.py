@@ -653,7 +653,7 @@ class NBGrader(GradingSystem):
             assignment_name, assignment_name + '.html')
 
     # ----------------------------------------------------------------------------------------------------------
-    def collect_grader_submissions(self, submission: Submission):
+    def collect_grader_submission(self, submission: Submission):
         #logger = get_run_logger()
         grader = submission.grader
         if not os.path.exists(grader.info['collected_assignment_path']):

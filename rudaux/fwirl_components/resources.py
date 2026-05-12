@@ -124,6 +124,18 @@ class GradingSystemResource(Resource):
     def close(self):
         pass
 
+    def build_grader(self, course_name, assignment_name, username, skip):
+        self.gradsys.build_grader(course_name, assignment_name, username, skip)
+
+    def initialize_graders(self, graders):
+        self.gradsys.initialize_graders(graders)
+
+    def assign_submission_to_grader(self, graders, submission):
+        self.gradsys.assign_submission_to_grader(graders, submission)
+
+    def collect_grader_submission(self, submission):
+        self.gradsys.collect_grader_submission(submission)
+
     def clean_submission(self, submission):
         self.gradsys.clean_grader_submission(submission)
 
@@ -138,6 +150,15 @@ class GradingSystemResource(Resource):
     
     def generate_feedback(self, submission):
         self.gradsys.generate_feedback(submission)
+
+    def return_solution(self, submission):
+        self.gradsys.return_solution(submission)
+
+    def return_feedback(self, submission):
+        self.gradsys.return_feedback(submission)
+
+    def compute_submission_percent_grade(self, submission):
+        self.gradsys.compute_submission_percent_grade(submission)
 
 # ------------------------------------------------------------------------------------------------
 class SubmissionSystemResource(Resource):
