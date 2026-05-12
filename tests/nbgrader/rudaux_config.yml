@@ -120,9 +120,9 @@ earliest_solution_return_date: '2021-09-26'
 assignments:
   course_dsci_100_test:
     worksheet_intro:
-    - grader_jhub_username_A
+    - mock_grader
     tutorial_intro:
-    - grader_jhub_username_B
+    - mock_grader
 
 # =========================================================================
 latereg_extension_days:
