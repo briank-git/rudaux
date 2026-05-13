@@ -125,7 +125,7 @@ class GradingSystemResource(Resource):
         pass
 
     def build_grader(self, course_name, assignment_name, username, skip):
-        self.gradsys.build_grader(course_name, assignment_name, username, skip)
+        return self.gradsys.build_grader(course_name, assignment_name, username, skip)
 
     def initialize_graders(self, graders):
         self.gradsys.initialize_graders(graders)

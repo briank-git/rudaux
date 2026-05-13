@@ -95,7 +95,7 @@ nbgrader_submissions_folder: 'submitted'
 nbgrader_feedback_folder: 'feedback'
 nbgrader_autograded_folder: 'autograded'
 
-nbgrader_user_root: './'
+nbgrader_user_root: '/tank/home/testdsci100'
 
 # the amount of memory to give each autograding container
 nbgrader_docker_memory: '2g'
@@ -120,9 +120,9 @@ earliest_solution_return_date: '2021-09-26'
 assignments:
   course_dsci_100_test:
     worksheet_intro:
-    - mock_grader
+    - mockgrader
     tutorial_intro:
-    - mock_grader
+    - mockgrader
 
 # =========================================================================
 latereg_extension_days:

@@ -5,7 +5,9 @@ from collections import namedtuple
 from json import JSONDecodeError
 import logging 
 from subprocess import check_output, CalledProcessError, STDOUT
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Any
+from pydantic import PrivateAttr
+from dictauth.users import get_users
 import pendulum as plm
 from bs4 import BeautifulSoup
 #from dictauth.users import add_user, remove_user, get_users
@@ -52,6 +54,7 @@ def _compute_max_score(submission: Submission):
 
 
 class NBGrader(GradingSystem):
+    _users: List[str] = PrivateAttr(default=None)
     nbgrader_docker_image: str
     nbgrader_docker_memory: str
     nbgrader_docker_bind_folder: str
@@ -77,9 +80,9 @@ class NBGrader(GradingSystem):
         pass
 
     # -----------------------------------------------------------------------------------------
-    def initialize(self):
+    def model_post_init(self, context: Any) -> None:
         # get list of users from dictauth
-        self.users = self._get_users()
+        self._users = self._get_users()
 
     # -----------------------------------------------------------------------------------------
     def _get_generated_assignments(self, work_dir: str) -> dict:
@@ -433,8 +436,8 @@ class NBGrader(GradingSystem):
 
         # users = self.get_users()
         # ensure user exists
-        if username not in self.users:
-            msg = f"User account {username} listed in rudaux_config does not exist in dictauth: {self.users} . " \
+        if username not in self._users:
+            msg = f"User account {username} listed in rudaux_config does not exist in dictauth: {self._users} . " \
                   f"Make sure to use dictauth to create a grader account for each of the " \
                   f"TA/instructors listed in config.assignments"
             logger.error(msg)
@@ -578,7 +581,7 @@ class NBGrader(GradingSystem):
 
         #logger = get_run_logger()
         # users = self._get_users()
-        if grader.name not in self.users:
+        if grader.name not in self._users:
             logger.info(f"User {grader.name} does not exist; creating")
             self._add_grader_account(grader=grader)
         return grader

@@ -17,11 +17,6 @@ class GradingSystem(ABC, BaseModel):
         pass
 
     # -----------------------------------------------------------------------------------------
-    @abstractmethod
-    def initialize(self):
-        pass
-
-    # -----------------------------------------------------------------------------------------
     def generate_assignment(self, grader: Grader):
         pass
 
