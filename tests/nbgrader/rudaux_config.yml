@@ -71,6 +71,7 @@ nbgrader_instructor_user: 'grader_jupyterhub_username_A'
 # specify where to find the jupyterhub config directory (rudaux manages grading jupyterhub accounts)
 nbgrader_jupyterhub_config_dir: '/srv/jupyterhub/'
 
+# specify where the nbgrader base directory resides (e.g '', 'R', or 'python')
 nbgrader_path: 'R'
 
 # specify the quota to give grading accounts
@@ -82,7 +83,7 @@ nbgrader_user_quota: '5g'
 nbgrader_zfs_path: "/usr/sbin/zfs"
 
 # the ssh-access git repository URL (the root of this directory should be an 'nbgrader' dir)
-instructor_repo_url: 'git@github.com/your-instructor-repo.git'
+instructor_repo_url: 'git@github.com:UBC-DSCI/dsci-100-instructor.git'
 # the path in each student's JHub directory to look for their assignment folders
 # e.g. if assignment_name_1's folder is located at dsci-100-student/materials/assignment_name_1/...
 # within each student's jhub user folder (and similar for the other assignments),

@@ -2,6 +2,7 @@
 import os
 import pwd
 import grp
+from subprocess import check_output, STDOUT
 #from prefect import get_run_logger
 import logging
 
@@ -17,12 +18,7 @@ def get_logger():
 def recursive_chown(path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
-    os.chown(path, uid, gid)
-    for root, dirs, files in os.walk(path):
-        for di in dirs:
-            os.chown(os.path.join(root, di), uid, gid)
-        for fi in files:
-            os.chown(os.path.join(root, fi), uid, gid)
+    check_output(['sudo', 'chown', '-R', str(uid) + ':' + str(gid), path], stderr=STDOUT)
 
 
 # --------------------------------------------------------------------------------------------------

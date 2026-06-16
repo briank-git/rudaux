@@ -10,7 +10,7 @@ from pydantic import PrivateAttr
 from dictauth.users import get_users
 import pendulum as plm
 from bs4 import BeautifulSoup
-#from dictauth.users import add_user, remove_user, get_users
+from dictauth.users import add_user, remove_user, get_users
 #from prefect.exceptions import PrefectSignal
 import git
 from rudaux.interface.base.grading_system import GradingSystem
@@ -22,7 +22,8 @@ from nbgrader.api import Gradebook, MissingEntry
 #from prefect import get_run_logger
 from rudaux.util.util import grader_account_name, recursive_chown
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from loguru import logger
 
 def _create_submission_folder(grader: Grader):
     # create the submissions folder
@@ -65,6 +66,7 @@ class NBGrader(GradingSystem):
     nbgrader_jupyterhub_group: str
     nbgrader_user_quota: str
     nbgrader_user_root: str
+    nbgrader_path: str
     nbgrader_submissions_folder: Optional[str] = 'submitted'
     nbgrader_feedback_folder: Optional[str] = 'feedback'
     nbgrader_autograded_folder: Optional[str] = 'autograded'
@@ -108,7 +110,7 @@ class NBGrader(GradingSystem):
         ##logger = get_run_logger()
 
         assignment_name = grader.info['assignment_name']
-        work_dir = grader.info['folder']
+        work_dir = os.path.join(grader.info['folder'], self.nbgrader_path)
         grader_name = grader.name
 
         # if the assignment hasn't been generated yet, generate it
@@ -149,16 +151,19 @@ class NBGrader(GradingSystem):
         assignment_name = grader.info['assignment_name']
         local_source_path = grader.info['local_source_path']
         solution_name = grader.info['solution_name']
-        work_dir = grader.info['folder']
+        work_dir = os.path.join(grader.info['folder'], self.nbgrader_path)
 
         # if the solution hasn't been generated yet, generate it
         if not os.path.exists(grader.info['solution_path']):
             logger.info(f"Solution for {assignment_name} not yet generated for grader {grader.info['name']}")
 
-            command = f"jupyter nbconvert {local_source_path} --output={solution_name} --output-dir=."
+            command = f"jupyter nbconvert {local_source_path} --to html --output={solution_name} --output-dir=."
             output = run_container(
-                command=command, docker_image=self.nbgrader_docker_image,
-                docker_memory=self.nbgrader_docker_memory, work_dir=work_dir)
+                command=command,
+                docker_image=self.nbgrader_docker_image,
+                docker_memory=self.nbgrader_docker_memory,
+                work_dir=work_dir,
+                ctr_bind_dir=self.nbgrader_docker_bind_folder)
 
             logger.info(output['log'])
 
@@ -450,16 +455,17 @@ class NBGrader(GradingSystem):
         info['assignment_name'] = assignment_name
         info['unix_user'] = self.nbgrader_jupyterhub_user
         info['unix_group'] = self.nbgrader_jupyterhub_group
+        info['unix_quota'] = self.nbgrader_user_quota
         info['folder'] = os.path.join(self.nbgrader_user_root, grader_name).rstrip('/')
         info['local_source_path'] = os.path.join('source', assignment_name, assignment_name + '.ipynb')
-        info['submissions_folder'] = os.path.join(info['folder'], self.nbgrader_submissions_folder)
-        info['autograded_folder'] = os.path.join(info['folder'], self.nbgrader_autograded_folder)
-        info['feedback_folder'] = os.path.join(info['folder'], self.nbgrader_feedback_folder)
+        info['submissions_folder'] = os.path.join(info['folder'], self.nbgrader_path, self.nbgrader_submissions_folder)
+        info['autograded_folder'] = os.path.join(info['folder'], self.nbgrader_path, self.nbgrader_autograded_folder)
+        info['feedback_folder'] = os.path.join(info['folder'], self.nbgrader_path, self.nbgrader_feedback_folder)
         info['workload'] = 0  # how many submissions they have to grade
         if os.path.exists(info['submissions_folder']):
             info['workload'] = len([f for f in os.listdir(info['submissions_folder']) if os.path.isdir(f)])
         info['solution_name'] = assignment_name + '_solution.html'
-        info['solution_path'] = os.path.join(info['folder'], info['solution_name'])
+        info['solution_path'] = os.path.join(info['folder'], self.nbgrader_path, info['solution_name'])
 
         grader = Grader(name=grader_name, info=info, skip=skip)
         return grader
@@ -500,8 +506,8 @@ class NBGrader(GradingSystem):
                     salt=None,
                     digest=None)
         add_user(args)
-        check_output(['systemctl', 'stop', 'jupyterhub'])
-        check_output(['systemctl', 'start', 'jupyterhub'])
+        check_output(['sudo', 'systemctl', 'stop', 'jupyterhub'])
+        check_output(['sudo', 'systemctl', 'start', 'jupyterhub'])
 
     # -----------------------------------------------------------------------------------------
     def _create_grading_volume(self, grader: Grader):
@@ -524,6 +530,8 @@ class NBGrader(GradingSystem):
                 # zfs_path = "/usr/sbin/zfs"
                 check_output(['sudo', self.nbgrader_zfs_path, 'create', "-o", "refquota=" + grader.info['unix_quota'],
                               grader.info['folder'].lstrip('/')], stderr=STDOUT)
+                # update permissions
+                recursive_chown(grader.info['folder'], self.nbgrader_jupyterhub_user, self.nbgrader_jupyterhub_group)
             except CalledProcessError as e:
                 msg = f"Error running command {e.cmd}. return_code {e.returncode}. " \
                       f"output {e.output}. stdout {e.stdout}. stderr {e.stderr}"

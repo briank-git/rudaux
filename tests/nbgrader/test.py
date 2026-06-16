@@ -23,4 +23,13 @@ skip=False
 grader1 = gsr.build_grader(course_name, assignment_name, username, skip)
 print(grader1)
 
+# Initialize grader
+# create_grading_volume
+# _clone_git_repository(grader=grader)
+# _create_submission_folder(grader=grader)
+# generate_assignment(grader=grader)
+# generate_solution(grader=grader)
+# _initialize_account(grader=grader)
+gsr.initialize_graders([grader1])
+
 
