@@ -18,6 +18,7 @@ def get_logger():
 def recursive_chown(path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
+    check_output(['sudo','chmod','-R','775', path])
     check_output(['sudo', 'chown', '-R', str(uid) + ':' + str(gid), path], stderr=STDOUT)
 
 

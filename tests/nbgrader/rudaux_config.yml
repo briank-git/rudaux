@@ -105,7 +105,7 @@ nbgrader_docker_memory: '2g'
 nbgrader_docker_image: 'ubcdsci/r-dsci-100-grading:686e5c519e01'
 
 nbgrader_jupyterhub_user: 'jovyan'
-nbgrader_jupyterhub_group: 'users'
+nbgrader_jupyterhub_group: 'stty2u'
 
 # the name of the directory in the container to bind to the grader's jhub folder
 nbgrader_docker_bind_folder: '/home/jovyan/work'

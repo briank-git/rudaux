@@ -638,7 +638,7 @@ class NBGrader(GradingSystem):
         # if not assigned to anyone, choose the worker with the minimum current workload
         if not found:
             # sort graders in place and assign
-            graders.sort(key=lambda g: g['workload'])
+            graders.sort(key=lambda g: g.info['workload'])
             min_grader = graders[0]
             min_grader.info['workload'] += 1
             submission.grader = min_grader
