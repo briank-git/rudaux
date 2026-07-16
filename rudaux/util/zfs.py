@@ -80,7 +80,7 @@ class ZFS:
     # ----------------------------------------------------------------------------------------------------------------
     def get_snapshots(self, volume: str) -> List[Dict]:
         # send the list snapshot command
-        std_out, std_err = self._command(f"sudo {self.zfs_path} list -r -t snapshot -o name,creation {volume}")
+        std_out, std_err = self._command(f"{self.zfs_path} list -r -t snapshot -o name,creation {volume}")
         # parse the unique snapshot names
         snaps = _parse_zfs_snaps(std_out)
         logger = get_run_logger()
@@ -294,28 +294,19 @@ class LocalZFS(ZFS):
 
 class RemoteZFS(ZFS):
     # ----------------------------------------------------------------------------------------------------------------
-    def __init__(self, zfs_path="/usr/sbin/zfs", tz="UTC", info=None):
+    def __init__(self, client, zfs_path="/usr/sbin/zfs", tz="UTC", info=None):
         self.scp = None
-        self.ssh = None
+        self.ssh = client
         super().__init__(zfs_path, tz, info)
 
     # ----------------------------------------------------------------------------------------------------------------
     def open(self):
-        logger = get_run_logger()
-        logger.info(f"Opening ssh connection to {self.info}")
-        # open an ssh connection to the student machine
-        self.ssh = pmk.client.SSHClient()
-        self.ssh.set_missing_host_key_policy(pmk.client.AutoAddPolicy())
-        self.ssh.load_system_host_keys()
-        self.ssh.connect(self.info['host'], self.info['port'], self.info['user'], allow_agent=True)
-        s = self.ssh.get_transport().open_session()
-        pmk.agent.AgentRequestHandler(s)
-        self.scp = SCPClient(self.ssh.get_transport())
+        pass
 
     # ----------------------------------------------------------------------------------------------------------------
     def close(self):
-        self.ssh.close()
-
+        pass
+        
     # ----------------------------------------------------------------------------------------------------------------
     def _command(self, cmd: str, status_fail=True) -> Tuple[str, str]:
         """

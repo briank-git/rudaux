@@ -5,9 +5,9 @@ from loguru import logger
 
 class SSHUtil:
     # Open an SSH connection to target host
-    # TAKES: config, course_section_name
+    # TAKES: config, course_section_name, superuser
     # RETURNS: paramiko SSH client
-    def ssh_open(self, config, course_section_name):
+    def ssh_open(self, config, course_section_name, superuser):
         stu_ssh = config[course_section_name]
 
         max_tries = stu_ssh['max_tries']
@@ -22,7 +22,10 @@ class SSHUtil:
                 client = pmk.client.SSHClient()
                 client.set_missing_host_key_policy(pmk.client.AutoAddPolicy())
                 client.load_system_host_keys()
-                client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['file_user'], allow_agent=True)
+                if superuser:
+                    client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['superuser'], allow_agent=True)
+                else:
+                    client.connect(stu_ssh['hostname'], stu_ssh['port'], stu_ssh['user'], allow_agent=True)
                 s = client.get_transport().open_session()
                 pmk.agent.AgentRequestHandler(s)
 
@@ -50,6 +53,7 @@ class SSHUtil:
                 sftp_client.put(localfile, remotefile)
         except Exception as e:
             logger.info(f"Failed to transfer file {remotefile if fromremote else localfile} {'from' if fromremote else 'to'} remote:\n {e}")
+            sftp_client.close()
             raise e
         finally:
             sftp_client.close()

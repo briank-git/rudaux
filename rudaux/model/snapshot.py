@@ -5,8 +5,7 @@ from .override import Override
 from .student import Student
 from .assignment import Assignment
 
-
-def parse_snapshot_from_name(snap_name: str, assignments: Dict[str, Assignment]):
+def parse_snapshot_from_name(snap_name: str, assignments: Dict[str, Assignment], students: Dict[str, Student]):
     # snap_name format = '{course_name}-{section_number}-{assignment_name}-{student_lms_is}-{override_lms_id}'
     # example: tank/home/stat301/868424@stat301-101-worksheet_01-1338692-242114
 

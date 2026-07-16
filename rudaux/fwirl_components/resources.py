@@ -174,5 +174,5 @@ class SubmissionSystemResource(Resource):
     def close(self):
         pass
 
-    def list_snapshots(self, course_section_name):
-        self.subsys.list_snapshots(course_section_name)
+    def list_snapshots(self, course_section_name, assignments, students):
+        self.subsys.list_snapshots(course_section_name, assignments, students)

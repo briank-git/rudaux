@@ -55,12 +55,12 @@ class Canvas(LearningManagementSystem):
         
         logger.info(f"Retrieved course section info for {section.name}")
         logger.debug(f"Processed info {course_section_info}")
-        if course_section_info.start_at is None or course_section_info.end_at is None:
-            raise ValueError(f"Course start or end date has not been set for section {section.name}")
-        elif course_section_info.start_at > plm.now():
-            raise ValueError(f"Course start date is in the future.")
-        elif course_section_info.end_at < plm.now():
-            raise ValueError(f"Course has ended or end date incorrect.")
+        # if course_section_info.start_at is None or course_section_info.end_at is None:
+        #     raise ValueError(f"Course start or end date has not been set for section {section.name}")
+        # elif course_section_info.start_at > plm.now():
+        #     raise ValueError(f"Course start date is in the future.")
+        # elif course_section_info.end_at < plm.now():
+        #     raise ValueError(f"Course has ended or end date incorrect.")
 
         return course_section_info
 
