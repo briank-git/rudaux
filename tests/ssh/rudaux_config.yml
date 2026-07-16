@@ -29,7 +29,7 @@ canvas_base_domain: https://canvas.ubc.ca
 # EXAMPLE: COURSE_SECTION_NAME_01": "12345"
 
 canvas_course_lms_ids:
-  section_dsci_100_test_01: '137224'
+  section_dsci_100_test_01: '177129'
 
 # =========================================================================
 canvas_registration_deadlines:
@@ -48,11 +48,12 @@ ssh_config:
   section_dsci_100_test_01: 
     hostname: dsci-200-student.stat.ubc.ca
     port: 22
-    user: stty2u
-    file_user: jovyan
+    superuser: stty2u
+    user: jovyan
     zfs_path: /usr/sbin/zfs
     student_root: /tank/home/dsci200
     max_tries: 3
+    timezone: UTC
 
 # =========================================================================
 #                       NBGRADER CONFIG
@@ -112,9 +113,19 @@ earliest_solution_return_date: '2021-09-26'
 # =========================================================================
 assignments:
   course_dsci_100_test:
-    worksheet_intro:
+    worksheet_data-privacy:
     - mockgrader
-    tutorial_intro:
+    worksheet_data-acquisition:
+    - mockgrader
+    worksheet_outliers:
+    - mockgrader
+    worksheet_missing-data:
+    - mockgrader
+    worksheet_simulations:
+    - mockgrader
+    worksheet_sampling-variability:
+    - mockgrader
+    worksheet_EDA:
     - mockgrader
 
 # =========================================================================
