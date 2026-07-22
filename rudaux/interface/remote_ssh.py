@@ -18,10 +18,6 @@ class RemoteSSHSubmissions(SubmissionSystem):
     def close(self):
         pass
 
-    # def list_snapshots(self, course_section_name: str, assignments: Dict[str, Assignment],
-    #                    students: Dict[str, Student]) -> List[Snapshot]:
-    #     pass
-
     def list_snapshots(self, course_section_name: str, assignments: Dict[str, Assignment], students: Dict[str, Student]) -> List[Snapshot]:
         client = SSHUtil().ssh_open(self.ssh_config, course_section_name, superuser=False)
         remotezfs = RemoteZFS(client=client, tz=self.ssh_config[course_section_name]['timezone'])
@@ -40,9 +36,16 @@ class RemoteSSHSubmissions(SubmissionSystem):
     
     def take_snapshot(self, course_section_name: str, snapshot: Snapshot):
         client = SSHUtil().ssh_open(self.ssh_config, course_section_name, superuser=True)
-        
-        client.close()
-        pass
+        remotezfs = RemoteZFS(client=client, tz=self.ssh_config[course_section_name]['timezone'])
+        try:
+            remotezfs.take_snapshot(self.ssh_config[course_section_name]['student_root'], snapshot.get_name())
+        except Exception as e:
+            if "dataset already exists" in str(e).lower():
+                logger.info(f"Snapshot {snapshot.get_name()} already exists.")
+            else:
+                raise e
+        finally:
+            client.close()
 
     
     def collect_snapshot(self, course_section_name: str, snapshot: Snapshot):

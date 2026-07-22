@@ -175,4 +175,7 @@ class SubmissionSystemResource(Resource):
         pass
 
     def list_snapshots(self, course_section_name, assignments, students):
-        self.subsys.list_snapshots(course_section_name, assignments, students)
+        return self.subsys.list_snapshots(course_section_name, assignments, students)
+
+    def take_snapshot(self, course_section_name, snapshot):
+        self.subsys.take_snapshot(course_section_name, snapshot)
