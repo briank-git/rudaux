@@ -6,6 +6,8 @@ from rudaux.fwirl_components.resources import SubmissionSystemResource
 from rudaux.fwirl_components.resources import LMSResource
 from rudaux.model.snapshot import Snapshot
 
+import pdb
+
 config_path='./rudaux_config.yml'
 
 with open(config_path) as f:
@@ -32,4 +34,7 @@ ssr.take_snapshot('section_dsci_100_test_01',test_snapshot)
 snapshots = ssr.list_snapshots('section_dsci_100_test_01', assignments, students)
 
 print(f'{len(snapshots)} snapshots found.')
-print(snapshots)
+
+document = ssr.collect_snapshot('section_dsci_100_test_01', snapshots[1])
+
+print(f'Document collected from snapshot: {document.info}')

@@ -1,3 +1,5 @@
+import os
+
 from rudaux.util.ssh import SSHUtil
 from rudaux.interface.base.submission_system import SubmissionSystem
 from rudaux.model import Assignment, Student
@@ -11,6 +13,7 @@ from typing import Dict, List, Any
 
 class RemoteSSHSubmissions(SubmissionSystem):
     ssh_config: Dict[str, dict]
+    student_local_assignment_folder: str
 
     def open(self, course_section_name: str):
         pass
@@ -26,7 +29,7 @@ class RemoteSSHSubmissions(SubmissionSystem):
 
         snapshots = []
         for snap_dict in snap_dicts:
-            snapshot = parse_snapshot_from_name(snap_dict["name"], assignments, students)
+            snapshot = parse_snapshot_from_name(snap_dict["name"], assignments, students, snap_dict["volume"])
             if snapshot is not None:
                 snapshots.append(snapshot)
 
@@ -50,9 +53,15 @@ class RemoteSSHSubmissions(SubmissionSystem):
     
     def collect_snapshot(self, course_section_name: str, snapshot: Snapshot):
         client = SSHUtil().ssh_open(self.ssh_config, course_section_name, superuser=False)
+        remotezfs = RemoteZFS(client=client, tz=self.ssh_config[course_section_name]['timezone'])
+        volume = self.ssh_config[course_section_name]['student_root']   
+        file_extension = '.ipynb'
+        relpath = os.path.join(snapshot.student.lms_id, f'.zfs/snapshot/{snapshot.get_name()}', self.student_local_assignment_folder, snapshot.assignment.name, snapshot.assignment.name + file_extension)
+        data, meta = remotezfs.read(volume, relpath)
         
         client.close()
-        pass
+        
+        return Document(info=meta, data=data)
 
     
     def distribute(self, course_section_name: str, student: Student, document):

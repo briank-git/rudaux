@@ -135,7 +135,7 @@ class ZFS:
         self._command(f"sudo chgrp -R {group} {path}")
 
     # ----------------------------------------------------------------------------------------------------------------
-    def read(self, volume: str, relative_path: str, snapshot=None) -> Tuple[List[AnyStr], DateTime]:
+    def read(self, volume: str, relative_path: str) -> Tuple[List[AnyStr], DateTime]:
         """
         reads volume
 
@@ -143,17 +143,13 @@ class ZFS:
         ----------
         volume: str
         relative_path: str
-        snapshot:
 
         Returns
         -------
         (lines, modified_datetime): Tuple[List[AnyStr], DateTime]
 
         """
-        if snapshot:
-            read_path = os.path.join("/", volume.strip("/"), f".zfs/snapshot/{snapshot}", relative_path)
-        else:
-            read_path = os.path.join("/", volume.strip("/"), relative_path)
+        read_path = os.path.join("/", volume.strip("/"), relative_path)
 
         # create a temporary file
         tnf = tempfile.NamedTemporaryFile()
@@ -295,7 +291,7 @@ class LocalZFS(ZFS):
 class RemoteZFS(ZFS):
     # ----------------------------------------------------------------------------------------------------------------
     def __init__(self, client, zfs_path="/usr/sbin/zfs", tz="UTC", info=None):
-        self.scp = None
+        self.sftp = client.open_sftp()
         self.ssh = client
         super().__init__(zfs_path, tz, info)
 
@@ -353,10 +349,13 @@ class RemoteZFS(ZFS):
 
     # ----------------------------------------------------------------------------------------------------------------
     def _read(self, source_path: str, dest_path: str, preserve_times=True):
-        self.scp.get(source_path, dest_path, preserve_times=preserve_times)
+        self.sftp.get(source_path, dest_path)
+        if preserve_times:
+            stat = self.sftp.stat(source_path)
+            os.utime(dest_path, (stat.st_atime, stat.st_mtime))
 
     # ----------------------------------------------------------------------------------------------------------------
     def _write(self, source_path: str, dest_path: str):
-        self.scp.put(source_path, recursive=False, remote_path=dest_path)
+        self.sftp.put(source_path, recursive=False, remote_path=dest_path)
 
     # ----------------------------------------------------------------------------------------------------------------
