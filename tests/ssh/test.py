@@ -38,3 +38,5 @@ print(f'{len(snapshots)} snapshots found.')
 document = ssr.collect_snapshot('section_dsci_100_test_01', snapshots[1])
 
 print(f'Document collected from snapshot: {document.info}')
+
+ssr.distribute('section_dsci_100_test_01', snapshots[1].student, document, 'testfile.ipynb')

@@ -10,6 +10,7 @@ from logging import getLogger as get_run_logger
 import os
 import tempfile
 import subprocess
+from loguru import logger
 
 
 # ====================================================================================================================
@@ -173,7 +174,7 @@ class ZFS:
         write_volume_root = os.path.join("/", volume.strip("/"))
 
         # get user + group for the volume
-        std_out, std_err = self._command(f"sudo ls -ld {write_volume_root}", status_fail=False)
+        std_out, std_err = self._command(f"ls -ld {write_volume_root}", status_fail=False)
         if "No such file" in std_out:
             raise Exception(f"Cannot write to {volume}, no such directory at {write_volume_root}")
         line = std_out.split('\n')[0].split(' ')
@@ -185,11 +186,11 @@ class ZFS:
         write_dir = os.path.dirname(write_path)
 
         # make directories required to put the file if needed
-        self._command('sudo mkdir -p {write_dir}')
+        self._command(f'mkdir -p {write_dir}')
 
         # change ownership of the volume to unix_user, unix_group
-        self._command(f"sudo chown -R {user} {write_volume_root}")
-        self._command(f"sudo chgrp -R {group} {write_volume_root}")
+        # self._command(f"sudo chown -R {user} {write_volume_root}")
+        # self._command(f"sudo chgrp -R {group} {write_volume_root}")
 
         # save the lines to a temporary file
         tnf = tempfile.NamedTemporaryFile()
@@ -203,12 +204,12 @@ class ZFS:
         tnf.close()
 
         # change ownership of the file to the correct user,group for the volume
-        self._command(f"sudo chown {user} {write_path}")
-        self._command(f"sudo chgrp {group} {write_path}")
+        # self._command(f"sudo chown {user} {write_path}")
+        # self._command(f"sudo chgrp {group} {write_path}")
 
         # check if the file was written
-        std_out, std_err = self._command(f"sudo ls {write_path}", status_fail=False)
-        if "No such file" in stdout:
+        std_out, std_err = self._command(f"ls {write_path}", status_fail=False)
+        if "No such file" in std_out:
             raise Exception(f"Failed to write file to storage: {write_path}")
 
 
@@ -356,6 +357,11 @@ class RemoteZFS(ZFS):
 
     # ----------------------------------------------------------------------------------------------------------------
     def _write(self, source_path: str, dest_path: str):
-        self.sftp.put(source_path, recursive=False, remote_path=dest_path)
+        try: 
+            if self.sftp.stat(dest_path):
+                logger.info(f'Did not write to remote, file already exists: {dest_path}')
+        except FileNotFoundError:
+            self.sftp.put(source_path, dest_path)
+            logger.info(f'Wrote file to remote {dest_path}')
 
     # ----------------------------------------------------------------------------------------------------------------
