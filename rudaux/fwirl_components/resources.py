@@ -162,11 +162,13 @@ class GradingSystemResource(Resource):
 
 # ------------------------------------------------------------------------------------------------
 class SubmissionSystemResource(Resource):
-    def __init__(self, key, settings, course_name):
+    def __init__(self, key, settings, course_name, course_section_name):
         super().__init__(key)
         self.course_name = course_name
         self.settings = settings
         self.subsys = get_submission_system(settings=settings, group_name=course_name)
+
+        self.subsys.open(course_section_name)
 
     def init(self):
         pass
