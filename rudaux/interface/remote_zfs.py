@@ -64,11 +64,11 @@ class RemoteZFSSubmissions(SubmissionSystem):
         return Document(info=meta, data=data)
 
     
-    def distribute(self, course_section_name: str, student: Student, document, filename: str):
+    def distribute(self, course_section_name: str, student: Student, document, filename: str, dirpath:str):
         client = self._ssh_client
         remotezfs = RemoteZFS(client=client, tz=self.ssh_config[course_section_name]['timezone'])
         volume = self.ssh_config[course_section_name]['student_root']   
-        relpath = os.path.join(student.lms_id, filename)
+        relpath = os.path.join(student.lms_id, dirpath, filename)
 
         remotezfs.write(document.data, volume, relpath)
 

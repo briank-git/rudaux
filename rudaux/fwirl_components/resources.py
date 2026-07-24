@@ -185,5 +185,5 @@ class SubmissionSystemResource(Resource):
     def collect_snapshot(self, course_section_name, snapshot):
         return self.subsys.collect_snapshot(course_section_name, snapshot)
 
-    def distribute(self, course_section_name, student, document, filename):
-        self.subsys.distribute(course_section_name, student, document, filename)
+    def distribute(self, course_section_name, student, document, filename, dirpath=''):
+        self.subsys.distribute(course_section_name, student, document, filename, dirpath)
