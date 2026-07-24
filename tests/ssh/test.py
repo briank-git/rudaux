@@ -23,8 +23,6 @@ students = lmsresource.get_students(course_section_name='section_dsci_100_test_0
 
 snapshots = ssr.list_snapshots('section_dsci_100_test_01', assignments, students)
 
-print(snapshots)
-
 test_snapshot = Snapshot(course_name='section_dsci_100_test_01',assignment=assignments['2380628'],student=None,override=None)
 
 print(f'Test snapshot name: {test_snapshot.get_name()}')
