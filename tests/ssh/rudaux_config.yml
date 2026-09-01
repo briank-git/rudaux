@@ -16,7 +16,7 @@ gs_classes:
 
 # =========================================================================
 ss_classes:
-  course_dsci_100_test: rudaux.interface.remote_ssh.RemoteSSHSubmissions
+  course_dsci_100_test: rudaux.interface.remote_zfs.RemoteZFSSubmissions
 
 # =========================================================================
 #                       CANVAS CONFIG
@@ -81,7 +81,7 @@ instructor_repo_url: 'git@github.com:UBC-DSCI/dsci-100-instructor.git'
 # e.g. if assignment_name_1's folder is located at dsci-100-student/materials/assignment_name_1/...
 # within each student's jhub user folder (and similar for the other assignments),
 # this would be "dsci-100-student/materials"
-student_local_assignment_folder: 'dsci-100-student/materials'
+student_local_assignment_folder: 'dsci-200/worksheets'
 
 # specify the names of submitted/feedback/autograded folders
 # you probably don't need to change these
