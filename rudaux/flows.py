@@ -44,7 +44,8 @@ def load_settings(path):
         with open(path) as f:
             config = yaml.safe_load(f)
 
-    return Settings.parse_obj(obj=config)
+    Settings.parse_obj(obj=config)
+    return config
 
 
 # -------------------------------------------------------------------------------------------------------------

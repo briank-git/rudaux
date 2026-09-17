@@ -36,16 +36,19 @@ class Settings(BaseModel):
     latereg_extension_days: Dict[str, int]
     notify_timezone: Dict[str, str]
 
+    # ssh settings
+    ssh_config: Dict[str, dict]
+
     # zfs settings
-    remote_zfs_hostname: Dict[str, str]
-    remote_zfs_port: Dict[str, str]
-    remote_zfs_username: Dict[str, str]
-    remote_zfs_tz: Dict[str, str]
+    # remote_zfs_hostname: Dict[str, str]
+    # remote_zfs_port: Dict[str, str]
+    # remote_zfs_username: Dict[str, str]
+    # remote_zfs_tz: Dict[str, str]
     # remote_zfs_volume_pattern: str
     # remote_zfs_collection_pattern: str
     # remote_zfs_distribution_pattern: str
-    remote_zfs_file_system_root: Dict[str, str]
-    remote_zfs_path: Dict[str, str]
+    # remote_zfs_file_system_root: Dict[str, str]
+    # remote_zfs_path: Dict[str, str]
 
     # nbgrader settings
     nbgrader_docker_image: str
