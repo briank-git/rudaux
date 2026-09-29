@@ -44,7 +44,7 @@ def load_settings(path):
         with open(path) as f:
             config = yaml.safe_load(f)
 
-    Settings.parse_obj(obj=config)
+    Settings.model_validate(obj=config)
     return config
 
 
@@ -138,7 +138,7 @@ def autoext_flow(settings: dict, course_name: str, section_name: str) -> None:
     """
 
     # settings object was serialized by prefect when registering the flow, so need to reparse it
-    settings = Settings.parse_obj(settings)
+    settings = Settings.model_validate(settings)
 
     # Create an LMS object
     lms = get_learning_management_system(settings=settings, group_name=course_name)
@@ -187,7 +187,7 @@ def snap_flow(settings: dict, course_name: str, section_name: str) -> None:
     """
 
     # settings object was serialized by prefect when registering the flow, so need to reparse it
-    settings = Settings.parse_obj(settings)
+    settings = Settings.model_validate(settings)
 
     # Create an LMS and SubS object
     lms = get_learning_management_system(settings=settings, group_name=course_name)
@@ -228,7 +228,7 @@ def snap_flow(settings: dict, course_name: str, section_name: str) -> None:
 # -------------------------------------------------------------------------------------------------------------
 #@flow
 def grade_flow(settings: dict, course_name: str):
-    settings = Settings.parse_obj(settings)
+    settings = Settings.model_validate(settings)
 
     # Create an LMS, SubS, and GradS objects
     lms = get_learning_management_system(settings=settings, group_name=course_name)
@@ -381,13 +381,13 @@ def grade_flow(settings: dict, course_name: str):
 # -------------------------------------------------------------------------------------------------------------
 #@flow
 def soln_flow(settings: dict, course_name: str):
-    settings = Settings.parse_obj(settings)
+    settings = Settings.model_validate(settings)
 
 
 # -------------------------------------------------------------------------------------------------------------
 #@flow
 def fdbk_flow(settings: dict, course_name: str):
-    settings = Settings.parse_obj(settings)
+    settings = Settings.model_validate(settings)
 
 
 # -------------------------------------------------------------------------------------------------------------
