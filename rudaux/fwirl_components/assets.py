@@ -19,6 +19,23 @@ from rudaux.tasks import get_learning_management_system, get_submission_system, 
 # ------------------------------------------------------------------------------------------------
 # Resources
 # ------------------------------------------------------------------------------------------------
+
+# Info about the Canvas course section (id, name, code, start at, end at, timezone)
+class CourseInfoAsset(fwirl.ExternalAsset):
+    async def get(self):
+        course_section_info = self.lmsresource.get_course_section_info(course_section_name=self.course_section_name)
+        return course_section_info
+
+    # Diff start_at, end_at, and time_zone attributes
+    def diff(self, val):
+        if self._cached_val is None:
+            return True
+        else:
+            def _attrs(x):
+                    return (x.start_at, x.end_at, x.time_zone)
+            return _attrs(val) != _attrs(self._cached_val)
+
+# ------------------------------------------------------------------------------------------------
 class AssignmentsListAsset(fwirl.ExternalAsset):
     def __init__(self, key, dependencies, lms_resource: LMSResource,
                  min_polling_interval, course_section_name: str):
@@ -32,27 +49,28 @@ class AssignmentsListAsset(fwirl.ExternalAsset):
                          min_polling_interval=min_polling_interval)
 
     async def get(self) -> Dict[str, Assignment]:
-        return self.lms_resource.get_assignments(course_section_name=self.course_section_name)
+        assignments = self.lmsresource.get_assignments(course_section_name=self.course_section_name)
+        return assignments
 
-    def diff(self, val: Dict[str, Assignment]):
-        # if self._cached_val != AssetStatus.Unavailable:
-        #     cached_val_copy = self._cached_val.copy()
-        #     for assignment_id, assignment in val.items():
-        #         if assignment_id in self._cached_val:
-        #             if self._cached_val[assignment_id] == assignment:
-        #                 del cached_val_copy[assignment_id]
-        #             else:
-        #                 return False
-        #         else:
-        #             return False
-        #     if len(cached_val_copy) != 0:
-        #         return False
-        #     return True
-        # return False
-        return val != self._cached_val
-
+    # Diff assignment dict keys, if not different then compare each assignment entry
+    def diff(self, val):
+        if self._cached_val is None:
+            return True
+        elif val.keys() != self._cached_val.keys():
+            return True
+        else:
+            for a in val.values():
+                def _attrs(x):
+                    return (x.name, x.due_at, x.lock_at, x.unlock_at, x.overrides.keys(),
+                            x.only_visible_to_overrides, x.published, x.skip)
+                cached = self._cached_val[a.lms_id]
+                if _attrs(a) != _attrs(cached):
+                    return True
+            return False
 
 # ------------------------------------------------------------------------------------------------
+
+# Enrolled student list of a Canvas course
 class StudentsListAsset(fwirl.ExternalAsset):
     def __init__(self, key, dependencies, lms_resource: LMSResource,
                  min_polling_interval, course_section_name: str):
@@ -66,10 +84,15 @@ class StudentsListAsset(fwirl.ExternalAsset):
                          min_polling_interval=min_polling_interval)
 
     async def get(self) -> Dict[str, Student]:
-        return self.lms_resource.get_students(course_section_name=self.course_section_name)
+        student_list = self.lmsresource.get_students(course_section_name=self.course_section_name)
+        return student_list
 
-    def diff(self, val: Dict[str, Student]):
-        return val != self._cached_val
+    # Diff students dict keys i.e. student lms ids, if keys are different replace cached value
+    def diff(self, val):
+        if self._cached_val is None:
+            return True
+        else:
+            return val.keys() != self._cached_val.keys()
 
 
 # ------------------------------------------------------------------------------------------------
