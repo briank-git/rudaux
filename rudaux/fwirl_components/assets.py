@@ -32,9 +32,9 @@ class CourseInfoAsset(fwirl.ExternalAsset):
                          resources=[self.lms_resource],
                          group=0, subgroup=0,
                          min_polling_interval=min_polling_interval)
-                         
+
     async def get(self):
-        course_section_info = self.lmsresource.get_course_section_info(course_section_name=self.course_section_name)
+        course_section_info = self.lms_resource.get_course_section_info(course_section_name=self.course_section_name)
         return course_section_info
 
     # Diff start_at, end_at, and time_zone attributes
@@ -60,7 +60,7 @@ class AssignmentsListAsset(fwirl.ExternalAsset):
                          min_polling_interval=min_polling_interval)
 
     async def get(self) -> Dict[str, Assignment]:
-        assignments = self.lmsresource.get_assignments(course_section_name=self.course_section_name)
+        assignments = self.lms_resource.get_assignments(course_section_name=self.course_section_name)
         return assignments
 
     # Diff assignment dict keys, if not different then compare each assignment entry
@@ -95,7 +95,7 @@ class StudentsListAsset(fwirl.ExternalAsset):
                          min_polling_interval=min_polling_interval)
 
     async def get(self) -> Dict[str, Student]:
-        student_list = self.lmsresource.get_students(course_section_name=self.course_section_name)
+        student_list = self.lms_resource.get_students(course_section_name=self.course_section_name)
         return student_list
 
     # Diff students dict keys i.e. student lms ids, if keys are different replace cached value
