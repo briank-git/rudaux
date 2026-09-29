@@ -22,6 +22,17 @@ from rudaux.tasks import get_learning_management_system, get_submission_system, 
 
 # Info about the Canvas course section (id, name, code, start at, end at, timezone)
 class CourseInfoAsset(fwirl.ExternalAsset):
+    def __init__(self, key, dependencies, lms_resource: LMSResource,
+                 min_polling_interval, course_section_name: str):
+        self._built = False
+        self._ts = None
+        self.course_section_name = course_section_name
+        self.lms_resource = lms_resource
+        super().__init__(key=key, dependencies=dependencies,
+                         resources=[self.lms_resource],
+                         group=0, subgroup=0,
+                         min_polling_interval=min_polling_interval)
+                         
     async def get(self):
         course_section_info = self.lmsresource.get_course_section_info(course_section_name=self.course_section_name)
         return course_section_info
